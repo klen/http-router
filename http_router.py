@@ -3,7 +3,7 @@ from collections import defaultdict
 from urllib.parse import unquote
 
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 __license__ = "MIT"
 
 
