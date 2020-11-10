@@ -39,7 +39,7 @@ Installation
 Usage
 =====
 
-```python
+.. code:: python
     
     from http_router import Router
 
@@ -79,8 +79,6 @@ Usage
 
     print(router('/order/100'))
     # {'id': '100'}, <function order2>
-
-```
 
 
 .. _bugtracker:
