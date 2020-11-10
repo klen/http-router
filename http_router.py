@@ -62,22 +62,23 @@ class Router:
 
     NotFound = NotFound
 
-    def __init__(self, default=None, trim_last_slash=False):
+    def __init__(self, raise_not_found=True, trim_last_slash=False):
         self.plain = defaultdict(list)
         self.trim_last_slash = trim_last_slash
+        self.raise_not_found = raise_not_found
         self.dynamic = list()
-        if default:
-            self.default = default
 
     def __call__(self, path, method="GET"):
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
+
         for route, cb in self.plain.get(path, self.dynamic):
             match = route.match(path, method)
             if match is not None:
                 return cb, match
 
-        return None, self.default(path, method)
+        if self.raise_not_found:
+            raise self.NotFound(path, method)
 
     def bind(self, callback, *paths, methods=None):
         for path in paths:
@@ -87,10 +88,6 @@ class Router:
                 continue
 
             self.plain[pattern].append((Route(pattern, methods), callback))
-
-    def default(self, path, method):
-        """The default callback."""
-        raise NotFound(path, method)
 
     def route(self, *paths, methods=None):
         """Register a route."""
