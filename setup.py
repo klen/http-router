@@ -20,7 +20,7 @@ setup(
     description="Route functions by a http path",
     long_description=_read('README.rst'),
 
-    py_modules=['http_rotuer'],
+    py_modules=['http_router'],
 
     author='Kirill Klenov',
     author_email='horneds@gmail.com',
