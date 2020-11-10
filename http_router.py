@@ -28,10 +28,10 @@ class Route:
         self.pattern = pattern
 
     def match(self, path, method="GET"):
-        return (
+        return ((
             (not self.methods or method in self.methods) and
             path == self.pattern
-        ) or None
+        ) or None) and {}
 
     def __hash__(self):
         return self.pattern
@@ -75,7 +75,7 @@ class Router:
         for route, cb in self.plain.get(path, self.dynamic):
             match = route.match(path, method)
             if match is not None:
-                return match, cb
+                return cb, match
 
         return None, self.default(path, method)
 

@@ -78,7 +78,7 @@ Usage
 
 
     print(router('/order/100'))
-    # {'id': '100'}, <function order2>
+    # <function order2>, {'id': '100'}
 
 
 .. _bugtracker:

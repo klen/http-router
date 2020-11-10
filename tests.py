@@ -7,9 +7,9 @@ def test_route():
     from http_router import Route
 
     route = Route('/only-post', ['POST', 'PUT'])
-    assert route.match('/only-post', 'POST')
-    assert route.match('/only-post', 'PUT')
-    assert not route.match('/only-post', 'GET')
+    assert route.match('/only-post', 'POST') is not None
+    assert route.match('/only-post', 'PUT') is not None
+    assert route.match('/only-post', 'GET') is None
 
 
 def test_dynamic_route():
@@ -34,27 +34,32 @@ def test_router():
     with pytest.raises(router.NotFound):
         assert router('/unknown')
 
-    _, cb = router('/', 'POST')
+    cb, opts = router('/', 'POST')
     assert cb() == 'simple'
+    assert opts == {}
 
-    _, cb = router('/simple', 'DELETE')
+    cb, opts = router('/simple', 'DELETE')
     assert cb() == 'simple'
+    assert opts == {}
 
-    _, cb = router('/regex', 'PATCH')
+    cb, opts = router('/regex', 'PATCH')
     assert cb() == 'opt'
+    assert opts == {}
 
-    _, cb = router('/regex/opt', 'PATCH')
+    cb, opts = router('/regex/opt', 'PATCH')
     assert cb() == 'opt'
+    assert opts == {}
 
-    _, cb = router('/only-post', 'POST')
+    cb, opts = router('/only-post', 'POST')
     assert cb() == 'only-post'
+    assert opts == {}
 
     with pytest.raises(router.NotFound):
         assert router('/only-post')
 
-    params, cb = router('/hello/john/', 'POST')
-    assert params == {'name': 'john'}
+    cb, opts = router('/hello/john/', 'POST')
     assert cb() == 'dyn'
+    assert opts == {'name': 'john'}
 
 
 #  pylama:ignore=D
