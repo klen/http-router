@@ -114,7 +114,8 @@ def parse(path):
         [part] = match.groups()
         match = DYNR_RE.match(part)
         params = match.groupdict()
-        return '(?P<%s>%s)' % (params['var'], params['re'].strip() or '[^/]+')
+        params['re'] = params['re'] or '[^/]+'
+        return '(?P<%s>%s)' % (params['var'], params['re'].strip())
 
     pattern = DYNS_RE.sub(parse_, path)
 
