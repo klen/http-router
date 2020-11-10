@@ -7,7 +7,7 @@ __version__ = "0.0.6"
 __license__ = "MIT"
 
 
-DYNR_RE = re.compile(r'^\{(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\}$')
+DYNR_RE = re.compile(r'^\{\s*(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\}$')
 DYNS_RE = re.compile(r'(\{[^{}]*\})')
 METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATH"}
 RETYPE = type(re.compile('@'))
@@ -114,7 +114,7 @@ def parse(path):
         [part] = match.groups()
         match = DYNR_RE.match(part)
         params = match.groupdict()
-        return '(?P<%s>%s)' % (params['var'], params['re'] or '[^/]+')
+        return '(?P<%s>%s)' % (params['var'], params['re'].strip() or '[^/]+')
 
     pattern = DYNS_RE.sub(parse_, path)
 

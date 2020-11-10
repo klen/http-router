@@ -29,7 +29,7 @@ def test_router():
     router.route('/', '/simple')(lambda: 'simple')
     router.route('/regex(/opt)?')(lambda: 'opt')
     router.route('/only-post', methods='post')(lambda: 'only-post')
-    router.route(r'/hello/{name:\w+}/?', methods='post')(lambda: 'dyn')
+    router.route(r'/hello/{ name:\w+ }/?', methods='post')(lambda: 'dyn')
 
     with pytest.raises(router.NotFound):
         assert router('/unknown')
