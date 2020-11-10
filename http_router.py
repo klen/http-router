@@ -7,7 +7,7 @@ __version__ = "0.0.8"
 __license__ = "MIT"
 
 
-DYNR_RE = re.compile(r'^\{\s*(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\}$')
+DYNR_RE = re.compile(r'^\{\s*(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\s*\}$')
 DYNS_RE = re.compile(r'(\{[^{}]*\})')
 METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATH"}
 RETYPE = type(re.compile('@'))

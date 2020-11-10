@@ -29,7 +29,8 @@ def test_router():
     router.route('/', '/simple')(lambda: 'simple')
     router.route('/regex(/opt)?')(lambda: 'opt')
     router.route('/only-post', methods='post')(lambda: 'only-post')
-    router.route(r'/dynamic/{id}/?')(lambda: 'dyn')
+    router.route(r'/dynamic1/{id}/?')(lambda: 'dyn1')
+    router.route(r'/dynamic2/{ id }/?')(lambda: 'dyn2')
     router.route(r'/hello/{ name:\w+ }/?', methods='post')(lambda: 'hello')
 
     with pytest.raises(router.NotFound):
@@ -58,9 +59,13 @@ def test_router():
     with pytest.raises(router.NotFound):
         assert router('/only-post')
 
-    cb, opts = router('/dynamic/12/')
-    assert cb() == 'dyn'
-    assert opts == {'id': '12'}
+    cb, opts = router('/dynamic1/11/')
+    assert cb() == 'dyn1'
+    assert opts == {'id': '11'}
+
+    cb, opts = router('/dynamic2/22/')
+    assert cb() == 'dyn2'
+    assert opts == {'id': '22'}
 
     cb, opts = router('/hello/john/', 'POST')
     assert cb() == 'hello'
