@@ -17,6 +17,10 @@ class NotFound(Exception):
     pass
 
 
+class UsageError(AssertionError):
+    pass
+
+
 class Route:
     """Base plain route class."""
 
@@ -61,6 +65,7 @@ class Router:
     """Keep routes."""
 
     NotFound = NotFound
+    UsageError = UsageError
 
     def __init__(self, raise_not_found=True, trim_last_slash=False):
         self.plain = defaultdict(list)
@@ -89,19 +94,15 @@ class Router:
 
             self.plain[pattern].append((Route(pattern, methods), callback))
 
-    def route(self, *paths, methods=None):
+    def route(self, path, *paths, methods=None):
         """Register a route."""
 
+        if callable(path):
+            raise UsageError('`route` cannot be used as a decorator without params (paths)')
+
         def wrapper(callback):
-            self.bind(callback, *paths, methods=methods)
+            self.bind(callback, path, *paths, methods=methods)
             return callback
-
-        # Support for @app.register(func)
-        if len(paths) == 1 and callable(paths[0]):
-            callback = paths[0]
-
-            paths = []
-            return wrapper(callback)
 
         return wrapper
 

@@ -33,6 +33,9 @@ def test_router():
     router.route(r'/dynamic2/{ id }/?')(lambda: 'dyn2')
     router.route(r'/hello/{ name:\w+ }/?', methods='post')(lambda: 'hello')
 
+    with pytest.raises(router.UsageError):
+        router.route(lambda: 12)
+
     with pytest.raises(router.NotFound):
         assert router('/unknown')
 
