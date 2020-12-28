@@ -7,17 +7,15 @@ def test_route():
     from http_router import Route
 
     route = Route('/only-post', ['POST', 'PUT'])
-    assert route.match('/only-post', 'POST') is not None
-    assert route.match('/only-post', 'PUT') is not None
-    assert route.match('/only-post', 'GET') is None
+    assert route.match('/only-post') is not None
 
 
 def test_dynamic_route():
     from http_router import DynamicRoute
 
     route = DynamicRoute(r'/order/{id:\d+}')
-    assert {'id': '100'} == route.match('/order/100', 'POST')
-    assert not route.match('/order/unknown', 'POST')
+    assert {'id': '100'} == route.match('/order/100')
+    assert not route.match('/order/unknown')
 
 
 def test_router():
@@ -33,11 +31,14 @@ def test_router():
     router.route(r'/dynamic2/{ id }/?')(lambda: 'dyn2')
     router.route(r'/hello/{ name:\w+ }/?', methods='post')(lambda: 'hello')
 
-    with pytest.raises(router.UsageError):
+    with pytest.raises(router.RouterError):
         router.route(lambda: 12)
 
     with pytest.raises(router.NotFound):
         assert router('/unknown')
+
+    with pytest.raises(router.MethodNotAllowed):
+        assert router('/only-post')
 
     cb, opts = router('/', 'POST')
     assert cb() == 'simple'
@@ -58,9 +59,6 @@ def test_router():
     cb, opts = router('/only-post', 'POST')
     assert cb() == 'only-post'
     assert opts == {}
-
-    with pytest.raises(router.NotFound):
-        assert router('/only-post')
 
     cb, opts = router('/dynamic1/11/')
     assert cb() == 'dyn1'

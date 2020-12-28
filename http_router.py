@@ -13,11 +13,15 @@ METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE"
 RETYPE = type(re.compile('@'))
 
 
-class NotFound(Exception):
+class RouterError(Exception):
     pass
 
 
-class UsageError(AssertionError):
+class NotFound(RouterError):
+    pass
+
+
+class MethodNotAllowed(RouterError):
     pass
 
 
@@ -31,11 +35,8 @@ class Route:
         self.methods = methods & METHODS
         self.pattern = pattern
 
-    def match(self, path, method="GET"):
-        return ((
-            (not self.methods or method in self.methods) and
-            path == self.pattern
-        ) or None) and {}
+    def match(self, path):
+        return path == self.pattern and {}
 
     def __hash__(self):
         return self.pattern
@@ -52,10 +53,7 @@ class DynamicRoute(Route):
         if isinstance(self.pattern, str):
             self.pattern = parse(self.pattern)
 
-    def match(self, path, method="GET"):
-        if self.methods and method not in self.methods:
-            return
-
+    def match(self, path):
         match = self.pattern.match(path)
         if match:
             return {key: unquote(value) for key, value in match.groupdict('').items()}
@@ -65,7 +63,8 @@ class Router:
     """Keep routes."""
 
     NotFound = NotFound
-    UsageError = UsageError
+    RouterError = RouterError
+    MethodNotAllowed = MethodNotAllowed
 
     def __init__(self, raise_not_found=True, trim_last_slash=False):
         self.plain = defaultdict(list)
@@ -77,12 +76,20 @@ class Router:
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
 
+        methods = set()
         for route, cb in self.plain.get(path, self.dynamic):
-            match = route.match(path, method)
+            match = route.match(path)
             if match is not None:
+                methods |= route.methods
+                if route.methods and method not in route.methods:
+                    continue
+
                 return cb, match
 
         if self.raise_not_found:
+            if methods:
+                raise self.MethodNotAllowed(path, method)
+
             raise self.NotFound(path, method)
 
     def bind(self, callback, *paths, methods=None):
@@ -98,7 +105,7 @@ class Router:
         """Register a route."""
 
         if callable(path):
-            raise UsageError('`route` cannot be used as a decorator without params (paths)')
+            raise RouterError('`route` cannot be used as a decorator without params (paths)')
 
         def wrapper(callback):
             self.bind(callback, path, *paths, methods=methods)
