@@ -3,6 +3,16 @@
 import pytest
 
 
+def test_parse():
+    from http_router import parse, RETYPE
+
+    assert isinstance(parse('/'), str)
+    assert isinstance(parse('/test.jpg'), str)
+    assert isinstance(parse(r'/{foo}/'), RETYPE)
+    assert isinstance(parse(r'/{foo:\d+}/'), RETYPE)
+    assert isinstance(parse(r'/{foo}/?'), RETYPE)
+
+
 def test_route():
     from http_router import Route
 
