@@ -8,6 +8,7 @@ def test_parse():
 
     assert isinstance(parse('/'), str)
     assert isinstance(parse('/test.jpg'), str)
+    assert isinstance(parse('/{foo'), str)
 
     res = parse(r'/{foo}/')
     assert isinstance(res, RETYPE)
