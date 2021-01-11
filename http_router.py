@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from functools import partial
 from urllib.parse import unquote
 
 
@@ -7,8 +8,7 @@ __version__ = "0.1.0"
 __license__ = "MIT"
 
 
-DYNR_RE = re.compile(r'^\{\s*(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\s*\}$')
-DYNS_RE = re.compile(r'(\{[^{}]*\})')
+DYNR_RE = re.compile(r'^\s*(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\s*$')
 METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATH"}
 RETYPE = type(re.compile('@'))
 
@@ -92,41 +92,65 @@ class Router:
 
             raise self.NotFound(path, method)
 
-    def bind(self, callback, *paths, methods=None):
+    def bind(self, callback, *paths, methods=None, **opts):
         for path in paths:
             pattern = parse(path)
+            if opts:
+                callback = partial(callback, **opts)
+
             if isinstance(pattern, RETYPE):
                 self.dynamic.append((DynamicRoute(pattern, methods), callback))
                 continue
 
             self.plain[pattern].append((Route(pattern, methods), callback))
 
-    def route(self, path, *paths, methods=None):
+    def route(self, path, *paths, methods=None, **opts):
         """Register a route."""
 
         if callable(path):
             raise RouterError('`route` cannot be used as a decorator without params (paths)')
 
         def wrapper(callback):
-            self.bind(callback, path, *paths, methods=methods)
+            self.bind(callback, path, *paths, methods=methods, **opts)
             return callback
 
         return wrapper
 
 
+def regexize(path):
+    idx, group = 0, None
+    start, end = '{', '}'
+    while idx < len(path):
+        sym = path[idx]
+        idx += 1
+
+        if sym == start:
+            if group:
+                idx = path.find(end, idx) + 1
+                continue
+
+            group = idx
+            continue
+
+        if sym == end and group:
+            part = path[group: idx - 1]
+            match = DYNR_RE.match(part)
+            if match:
+                params = match.groupdict()
+                params['re'] = params['re'] or '[^/]+'
+                restr = '(?P<%s>%s)' % (params['var'], params['re'].strip())
+                path = path[:group - 1] + restr + path[idx:]
+                idx = group + len(restr)
+
+            group = None
+
+    return path
+
+
 def parse(path):
     """Parse URL path and convert it to regexp if needed."""
     path = path.strip(' ')
-
-    def parse_(match):
-        [part] = match.groups()
-        match = DYNR_RE.match(part)
-        params = match.groupdict()
-        params['re'] = params['re'] or '[^/]+'
-        return '(?P<%s>%s)' % (params['var'], params['re'].strip())
-
-    pattern = DYNS_RE.sub(parse_, path)
-
+    pattern = regexize(path.strip(' '))
     parsed = re.sre_parse.parse(pattern)
     for case, _ in parsed:
         if case not in (re.sre_parse.LITERAL, re.sre_parse.ANY):

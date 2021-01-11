@@ -8,9 +8,22 @@ def test_parse():
 
     assert isinstance(parse('/'), str)
     assert isinstance(parse('/test.jpg'), str)
-    assert isinstance(parse(r'/{foo}/'), RETYPE)
-    assert isinstance(parse(r'/{foo:\d+}/'), RETYPE)
-    assert isinstance(parse(r'/{foo}/?'), RETYPE)
+
+    res = parse(r'/{foo}/')
+    assert isinstance(res, RETYPE)
+    assert res.pattern == r'/(?P<foo>[^/]+)/$'
+
+    res = parse(r'/{foo}/?')
+    assert isinstance(res, RETYPE)
+    assert res.pattern == r'/(?P<foo>[^/]+)/?$'
+
+    res = parse(r'/{foo:\d+}/')
+    assert isinstance(res, RETYPE)
+    assert res.pattern == r'/(?P<foo>\d+)/$'
+
+    res = parse(r'/{foo:\d{1,3}}/')
+    assert isinstance(res, RETYPE)
+    assert res.pattern == r'/(?P<foo>\d{1,3})/$'
 
 
 def test_route():
@@ -39,7 +52,6 @@ def test_router():
     router.route('/only-post', methods='post')(lambda: 'only-post')
     router.route(r'/dynamic1/{id}/?')(lambda: 'dyn1')
     router.route(r'/dynamic2/{ id }/?')(lambda: 'dyn2')
-    router.route(r'/hello/{ name:\w+ }/?', methods='post')(lambda: 'hello')
 
     with pytest.raises(router.RouterError):
         router.route(lambda: 12)
@@ -78,9 +90,19 @@ def test_router():
     assert cb() == 'dyn2'
     assert opts == {'id': '22'}
 
+    @router.route(r'/hello/{ name:\w+ }/?', methods='post')
+    def hello():
+        return 'hello'
+
     cb, opts = router('/hello/john/', 'POST')
     assert cb() == 'hello'
     assert opts == {'name': 'john'}
 
+    @router.route('/params', var='value')
+    def params(**opts):
+        return opts
+
+    cb, opts = router('/params', 'POST')
+    assert cb() == {'var': 'value'}
 
 #  pylama:ignore=D
