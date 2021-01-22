@@ -56,8 +56,8 @@ Usage
 
 
     # Get a binded function and options by the given path
-    fn, opts = router('/simple')
-    print(fn, opts)
+    fn, path_params = router('/simple')
+    print(fn, path_params)
     #
     # >> <function simple>, {}
     #
@@ -65,7 +65,7 @@ Usage
 
     # The Router will raise a Router.NotFound for an unknown path
     try:
-        fn, opts = router('/unknown')
+        fn, path_params = router('/unknown')
     except router.NotFound as exc:
         print("%r" % exc)
         #

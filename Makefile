@@ -2,16 +2,15 @@ VIRTUAL_ENV 	?= env
 
 all: $(VIRTUAL_ENV)
 
-$(VIRTUAL_ENV): $(CURDIR)/requirements-tests.txt
-	@[ -d $(VIRTUAL_ENV) ] || virtualenv --python=python3 $(VIRTUAL_ENV)
-	@$(VIRTUAL_ENV)/bin/pip install -r requirements-tests.txt
+$(VIRTUAL_ENV): setup.cfg
+	@[ -d $(VIRTUAL_ENV) ] || python -m venv env
+	@$(VIRTUAL_ENV)/bin/pip install -e .[tests,build]
 	@touch $(VIRTUAL_ENV)
 
 VERSION	?= minor
 
 .PHONY: version
-version:
-	pip install bump2version
+version: $(VIRTUAL_ENV)
 	bump2version $(VERSION)
 	git checkout master
 	git pull
@@ -48,11 +47,15 @@ register:
 
 .PHONY: upload
 # target: upload - Upload module on PyPi
-upload: clean
-	@pip install twine wheel
+upload: clean $(VIRTUAL_ENV)
 	@python setup.py bdist_wheel
 	@twine upload dist/*
 
 
 test t: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/pytest tests.py
+
+
+mypy: $(VIRTUAL_ENV)
+	$(VIRTUAL_ENV)/bin/mypy http_router.py
+	# $(VIRTUAL_ENV)/bin/mypy tests.py
