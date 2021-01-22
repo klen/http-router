@@ -36,6 +36,10 @@ jobs:
         python -m venv env && env/bin/pip install .[tests]
       if: steps.cache-env.outputs.cache-hit != 'true'
 
+    - name: Check typing
+      run: |
+        env/bin/mypy http_router
+
     - name: Test with pytest
       run: |
         env/bin/pytest tests.py
