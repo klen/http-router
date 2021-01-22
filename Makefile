@@ -57,5 +57,4 @@ test t: $(VIRTUAL_ENV)
 
 
 mypy: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/mypy http_router.py
-	# $(VIRTUAL_ENV)/bin/mypy tests.py
+	$(VIRTUAL_ENV)/bin/mypy http_router
