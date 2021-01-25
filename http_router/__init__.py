@@ -74,9 +74,9 @@ class DynamicRoute(Route):
 class Router:
     """Keep routes."""
 
-    NotFound = NotFound
-    RouterError = RouterError
-    MethodNotAllowed = MethodNotAllowed
+    NotFound: t.Type[Exception] = NotFound
+    RouterError: t.Type[Exception] = RouterError
+    MethodNotAllowed: t.Type[Exception] = MethodNotAllowed
 
     def __init__(self, trim_last_slash: bool = False) -> None:
         self.trim_last_slash = trim_last_slash
