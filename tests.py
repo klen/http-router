@@ -32,10 +32,10 @@ def test_parse():
 def test_route():
     from http_router import Route
 
-    route = Route('/only-post', ['POST', 'PUT'])
+    route = Route('/only-post', None, ['POST', 'PUT'])
     assert route.match('/only-post') is not None
 
-    route = Route('/only-post')
+    route = Route('/only-post', None)
     assert not route.methods
 
 
@@ -43,19 +43,19 @@ def test_dynamic_route():
     from http_router import DynamicRoute
 
     route = DynamicRoute(r'/order/{id:\d+}')
-    match, params = route.match('/order/100')
+    match, cb, params = route.match('/order/100')
     assert match
     assert params == {'id': '100'}
 
-    match, params = route.match('/order/unknown')
+    match, cb, params = route.match('/order/unknown')
     assert not match
     assert not params
 
     route = DynamicRoute('/regex(/opt)?')
-    match, params = route.match('/regex')
+    match, cb, params = route.match('/regex')
     assert match
 
-    match, params = route.match('/regex/opt')
+    match, cb, params = route.match('/regex/opt')
     assert match
 
 
@@ -71,44 +71,45 @@ def test_router():
     with pytest.raises(router.NotFound):
         assert router('/unknown')
 
-    router.route('/', '/simple')(lambda: 'simple')
+    router.route('/', '/simple')('simple')
 
     cb, opts = router('/', 'POST')
-    assert cb() == 'simple'
+    assert cb == 'simple'
     assert opts == {}
 
     cb, opts = router('/simple', 'DELETE')
-    assert cb() == 'simple'
+    assert cb == 'simple'
     assert opts == {}
 
-    router.route('/regex(/opt)?')(lambda: 'opt')
+    router.route('/regex(/opt)?')('opt')
 
     cb, opts = router('/regex', 'PATCH')
-    assert cb() == 'opt'
+    assert cb == 'opt'
     assert opts == {}
 
     cb, opts = router('/regex/opt', 'PATCH')
-    assert cb() == 'opt'
+    assert cb == 'opt'
     assert opts == {}
 
-    router.route('/only-post', methods='post')(lambda: 'only-post')
+    router.route('/only-post', methods='post')('only-post')
+    assert router.plain['/only-post'][0].methods == {'POST'}
 
     with pytest.raises(router.MethodNotAllowed):
         assert router('/only-post')
 
     cb, opts = router('/only-post', 'POST')
-    assert cb() == 'only-post'
+    assert cb == 'only-post'
     assert opts == {}
 
-    router.route(r'/dynamic1/{id}/?')(lambda: 'dyn1')
-    router.route(r'/dynamic2/{ id }/?')(lambda: 'dyn2')
+    router.route(r'/dynamic1/{id}/?')('dyn1')
+    router.route(r'/dynamic2/{ id }/?')('dyn2')
 
     cb, opts = router('/dynamic1/11/')
-    assert cb() == 'dyn1'
+    assert cb == 'dyn1'
     assert opts == {'id': '11'}
 
     cb, opts = router('/dynamic2/22/')
-    assert cb() == 'dyn2'
+    assert cb == 'dyn2'
     assert opts == {'id': '22'}
 
     @router.route(r'/hello/{ name:\w+ }/?', methods='post')
@@ -125,6 +126,20 @@ def test_router():
 
     cb, opts = router('/params', 'POST')
     assert cb() == {'var': 'value'}
+
+
+def test_mounts():
+    from http_router import Mount
+
+    route = Mount('/api/')
+    assert route.pattern == '/api'
+    match, cb, params = route.match('/api/e1')
+    assert not match
+
+    route.route('/e1')('e1')
+    match, cb, params = route.match('/api/e1')
+    assert match
+    assert cb == 'e1'
 
 
 def test_cb_validator():
@@ -156,8 +171,29 @@ def test_custom_route():
     # The router only accepts async functions
     router = Router()
     router.route('/')(View)
-    assert router.plain['/'][0][0].methods == {'GET', 'POST'}
+    assert router.plain['/'][0].methods == {'GET', 'POST'}
     cb, opts = router('/')
     assert cb is View
+
+
+def test_nested_routers():
+    from http_router import Router
+
+    child = Router()
+    child.route('/url')('child_url')
+    cb, _ = child('/url')
+    assert cb == 'child_url'
+
+    root = Router()
+    root.route('/child')(child)
+
+    with pytest.raises(root.NotFound):
+        root('/child')
+
+    with pytest.raises(root.NotFound):
+        root('/child/unknown')
+
+    cb, _ = root('/child/url')
+    assert cb is 'child_url'
 
 #  pylama:ignore=D
