@@ -12,9 +12,6 @@ from .utils import regexize, parse
 __version__ = "0.5.0"
 __license__ = "MIT"
 
-
-METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATH"}
-
 # Types
 TYPE_METHODS = t.Union[t.Collection[str], str, None]
 CB = t.TypeVar('CB', bound=t.Any)
@@ -159,10 +156,10 @@ class Router:
         if opts:
             callback = partial(callback, **opts)
 
-        if not isinstance(methods, (list, tuple)):
+        if not isinstance(methods, (list, tuple, set)):
             methods = [methods]  # type: ignore
 
-        methods = set([m.upper() for m in methods if isinstance(m, str)]) & METHODS
+        methods = set(m.upper() for m in methods if isinstance(m, str))
 
         for path in paths:
             pattern = parse(path)

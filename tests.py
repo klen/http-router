@@ -81,7 +81,7 @@ def test_router():
     assert cb == 'simple'
     assert opts == {}
 
-    router.route('/regex(/opt)?')('opt')
+    router.route('/regex(/opt)?', methods=('GET', 'PATCH'))('opt')
 
     cb, opts = router('/regex', 'PATCH')
     assert cb == 'opt'
