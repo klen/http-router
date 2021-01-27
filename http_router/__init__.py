@@ -7,7 +7,7 @@ from urllib.parse import unquote
 from .utils import regexize, parse
 
 
-__version__ = "0.3.4"
+__version__ = "0.4.0"
 __license__ = "MIT"
 
 
