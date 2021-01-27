@@ -13,8 +13,10 @@ __license__ = "MIT"
 
 METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATH"}
 
+# Types
 TYPE_METHODS = t.Union[t.Sequence, str, None]
-F = t.TypeVar('F', bound=t.Callable)
+CB = t.TypeVar('CB', bound=t.Any)
+CBV = t.Callable[[CB], bool]
 
 
 __all__ = 'RouterError', 'NotFound', 'MethodNotAllowed', 'Route', 'DynamicRoute', 'Router'
@@ -79,8 +81,9 @@ class Router:
     RouterError: t.Type[Exception] = RouterError
     MethodNotAllowed: t.Type[Exception] = MethodNotAllowed
 
-    def __init__(self, trim_last_slash: bool = False) -> None:
+    def __init__(self, trim_last_slash: bool = False, validate_cb: CBV = lambda cb: True) -> None:
         self.trim_last_slash = trim_last_slash
+        self.validate_cb = validate_cb
         self.plain: t.Mapping[str, t.List] = defaultdict(list)
         self.dynamic: t.List = list()
 
@@ -103,31 +106,37 @@ class Router:
 
         raise self.NotFound(path, method)
 
-    def bind(
-            self, callback: t.Callable, *paths: str, methods: TYPE_METHODS = None, **opts) -> None:
+    def bind(self, callback: t.Any, *paths: str, methods: TYPE_METHODS = None, **opts):
+        """Bind a callback to self."""
+        if opts:
+            callback = partial(callback, **opts)
+
         for path in paths:
             pattern = parse(path)
-            if opts:
-                callback = partial(callback, **opts)
-
             if isinstance(pattern, t.Pattern):
                 self.dynamic.append((DynamicRoute(pattern, methods), callback))
                 continue
 
             self.plain[pattern].append((Route(pattern, methods), callback))
 
-    def route(
-            self, path: t.Union[F, str], *paths: str,
-            methods: TYPE_METHODS = None, **opts) -> t.Callable:
+    def route(self, path: t.Union[CB, str], *paths: str,
+              methods: TYPE_METHODS = None, **opts) -> t.Callable:
         """Register a route."""
 
         if isinstance(path, str):
             paths = (path, *paths)
 
         else:
-            raise RouterError('`route` cannot be used as a decorator without params (paths)')
+            raise self.RouterError('`route` cannot be used as a decorator without params (paths)')
 
-        def wrapper(callback: F) -> F:
+        def wrapper(callback: CB) -> CB:
+            if hasattr(callback, '__route__'):
+                callback.__route__(self, *paths, methods=methods, **opts)
+                return callback
+
+            if not self.validate_cb(callback):
+                raise self.RouterError('Invalid callback: %r' % callback)
+
             self.bind(callback, *paths, methods=methods, **opts)
             return callback
 

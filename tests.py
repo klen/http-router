@@ -1,5 +1,6 @@
 """HTTP Router tests."""
 
+import inspect
 import pytest
 import typing as t
 
@@ -125,5 +126,38 @@ def test_router():
     cb, opts = router('/params', 'POST')
     assert cb() == {'var': 'value'}
 
+
+def test_cb_validator():
+    from http_router import Router
+
+    # The router only accepts async functions
+    router = Router(validate_cb=inspect.iscoroutinefunction)
+
+    with pytest.raises(router.RouterError):
+        router.route('/', '/simple')(lambda: 'simple')
+
+
+def test_custom_route():
+    from http_router import Router
+
+    class View:
+
+        methods = 'get', 'post'
+
+        def __new__(cls, *args, **kwargs):
+            """Init the class and call it."""
+            self = super().__new__(cls)
+            return self(*args, **kwargs)
+
+        @classmethod
+        def __route__(cls, router, *paths, **params):
+            return router.bind(cls, *paths, methods=cls.methods)
+
+    # The router only accepts async functions
+    router = Router()
+    router.route('/')(View)
+    assert router.plain['/'][0][0].methods == {'GET', 'POST'}
+    cb, opts = router('/')
+    assert cb is View
 
 #  pylama:ignore=D
