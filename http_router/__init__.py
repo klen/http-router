@@ -14,6 +14,7 @@ __license__ = "MIT"
 METHODS = {"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATH"}
 
 TYPE_METHODS = t.Union[t.Sequence, str, None]
+F = t.TypeVar('F', bound=t.Callable)
 
 
 __all__ = 'RouterError', 'NotFound', 'MethodNotAllowed', 'Route', 'DynamicRoute', 'Router'
@@ -116,15 +117,18 @@ class Router:
             self.plain[pattern].append((Route(pattern, methods), callback))
 
     def route(
-            self, path: t.Union[t.Callable, str], *paths: str,
+            self, path: t.Union[F, str], *paths: str,
             methods: TYPE_METHODS = None, **opts) -> t.Callable:
         """Register a route."""
 
-        if callable(path):
+        if isinstance(path, str):
+            paths = (path, *paths)
+
+        else:
             raise RouterError('`route` cannot be used as a decorator without params (paths)')
 
-        def wrapper(callback):
-            self.bind(callback, path, *paths, methods=methods, **opts)
+        def wrapper(callback: F) -> F:
+            self.bind(callback, *paths, methods=methods, **opts)
             return callback
 
         return wrapper
