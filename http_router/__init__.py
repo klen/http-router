@@ -123,12 +123,6 @@ class Router:
               methods: TYPE_METHODS = None, **opts) -> t.Callable:
         """Register a route."""
 
-        if isinstance(path, str):
-            paths = (path, *paths)
-
-        else:
-            raise self.RouterError('`route` cannot be used as a decorator without params (paths)')
-
         def wrapper(callback: CB) -> CB:
             if hasattr(callback, '__route__'):
                 callback.__route__(self, *paths, methods=methods, **opts)
@@ -137,8 +131,17 @@ class Router:
             if not self.validate_cb(callback):
                 raise self.RouterError('Invalid callback: %r' % callback)
 
+            if not paths:
+                raise self.RouterError('Invalid route. A HTTP Path is required.')
+
             self.bind(callback, *paths, methods=methods, **opts)
             return callback
+
+        if isinstance(path, str):
+            paths = (path, *paths)
+
+        else:
+            return wrapper(path)
 
         return wrapper
 
