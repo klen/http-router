@@ -58,3 +58,7 @@ test t: $(VIRTUAL_ENV)
 
 mypy: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/mypy http_router
+
+
+example: $(VIRTUAL_ENV)
+	$(VIRTUAL_ENV)/bin/python example.py

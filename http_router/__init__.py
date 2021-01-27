@@ -33,6 +33,30 @@ class MethodNotAllowed(RouterError):
     pass
 
 
+class RouteMatch:
+    """Keeping route matching data."""
+
+    __slots__ = 'path', 'method', 'callback', 'path_params'
+
+    def __init__(self, path: bool = False, method: bool = False,
+                 callback: t.Any = None, path_params: t.Mapping[str, t.Any] = None):
+
+        self.path = path
+        self.method = method
+        self.callback = callback
+        self.path_params = path_params
+
+    def __bool__(self):
+        return self.path and self.method
+
+    def __iter__(self):
+        return iter([self.callback, self.path_params])
+
+    def __str__(self):
+        status = self.path and 200 or self.method and 404 or 405
+        return f"RouteMatch {status} ({self.callback}, {self.path_params!r})"
+
+
 @dc.dataclass  # type: ignore  # mypy issue: https://github.com/python/mypy/issues/5374
 class BaseRoute(metaclass=abc.ABCMeta):
 
@@ -40,7 +64,7 @@ class BaseRoute(metaclass=abc.ABCMeta):
     methods: t.Set[str] = dc.field(default_factory=lambda: set())
 
     @abc.abstractmethod
-    def match(self, path: str) -> t.Tuple[bool, t.Any, t.Optional[t.Mapping[str, t.Any]]]:
+    def match(self, path: str, method: str = 'GET') -> RouteMatch:
         pass
 
 
@@ -50,9 +74,10 @@ class Route(BaseRoute):
 
     callback: t.Any = None
 
-    def match(self, path: str) -> t.Tuple[bool, t.Any, t.Optional[t.Mapping[str, t.Any]]]:
+    def match(self, path: str, method: str = 'GET') -> RouteMatch:
         """Is the route match the path."""
-        return path == self.pattern, self.callback, None
+        return RouteMatch(
+            path == self.pattern, not self.methods or (method in self.methods), self.callback)
 
 
 @dc.dataclass
@@ -65,14 +90,14 @@ class DynamicRoute(Route):
         if isinstance(self.pattern, str):
             self.pattern: t.Pattern = re.compile(regexize(self.pattern))
 
-    def match(self, path: str) -> t.Tuple[bool, t.Any, t.Optional[t.Mapping[str, t.Any]]]:
+    def match(self, path: str, method: str = 'GET') -> RouteMatch:
         match = self.pattern.match(path)  # type: ignore
         if not match:
-            return False, None, None
+            return RouteMatch(callback=self.callback)
 
-        return (
-            bool(match), self.callback,
-            {key: unquote(value) for key, value in match.groupdict('').items()}
+        return RouteMatch(
+            bool(match), not self.methods or method in self.methods,
+            self.callback, {key: unquote(value) for key, value in match.groupdict('').items()}
         )
 
 
@@ -94,17 +119,17 @@ class Mount(BaseRoute):
 
         self.pattern = prefix.rstrip('/')
 
-    def match(self, path: str) -> t.Tuple[bool, t.Any, t.Optional[t.Mapping[str, t.Any]]]:
+    def match(self, path: str, method: str = 'GET') -> RouteMatch:
         """Is the route match the path."""
         if not path.startswith(self.pattern):
-            return False, None, None
+            return RouteMatch(False)
 
         try:
-            cb, opts = self.router(path[len(self.pattern):])
-            return True, cb, opts
+            cb, opts = self.router(path[len(self.pattern):], method=method)
+            return RouteMatch(True, True, cb, opts)
 
         except self.router.NotFound:
-            return False, None, None
+            return RouteMatch(False)
 
 
 @dc.dataclass
@@ -123,21 +148,18 @@ class Router:
         self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
         self.dynamic: t.List[BaseRoute] = list()
 
-    def __call__(
-            self, path: str, method: str = "GET") -> t.Tuple[t.Callable, t.Mapping[str, t.Any]]:
+    def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a callback for the given path and method."""
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
 
         methods: t.Set = set()
         for route in self.plain.get(path, self.dynamic):
-            match, cb, path_params = route.match(path)
-            if match:
+            match = route.match(path, method)
+            if match.path:
                 methods |= route.methods
-                if route.methods and method not in route.methods:
-                    continue
-
-                return cb, {} if path_params is None else path_params
+                if match.method:
+                    return match
 
         if methods:
             raise self.MethodNotAllowed(path, method)

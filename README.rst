@@ -59,7 +59,7 @@ Usage
     fn, path_params = router('/simple')
     print(fn, path_params)
     #
-    # >> <function simple>, {}
+    # >> <function simple> None
     #
     assert fn() == 'simple'
 
@@ -82,12 +82,12 @@ Usage
 
     print(router('/'))
     #
-    # >> <function index>, {}
+    # >> RouteMatch 200 (<function index>, None)
     #
 
     print(router('/home'))
     #
-    # >> <function index>, {}
+    # >> RouteMatch 200 (<function index>, None)
     #
 
 
@@ -110,7 +110,7 @@ Usage
 
     print(router('/only-post', method='POST'))
     #
-    # >> <function only_post>, {}
+    # >> RouteMatch 200 (<function only-post>, None)
     #
 
 
@@ -123,12 +123,12 @@ Usage
 
     print(router('/regex', method='POST'))
     #
-    # >> <function optional>, {}
+    # >> RouteMatch 200 (<function optional>, {})
     #
 
     print(router('/regex/opt', method='POST'))
     #
-    # >> <function optional>, {}
+    # >> RouteMatch 200 (<function optional>, {})
     #
 
 
@@ -141,7 +141,7 @@ Usage
 
     print(router('/order1/42'))
     #
-    # >> <function order1>, {'id': '42'}
+    # >> RouteMatch 200 (<function order1>, {'id': '42'})
     #
 
 
@@ -154,7 +154,7 @@ Usage
 
     print(router('/order2/100'))
     #
-    # >> <function order2>, {'id': '100'}
+    # >> RouteMatch 200 (<function order1>, {'id': '100'})
     #
 
     try:

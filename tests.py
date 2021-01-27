@@ -32,10 +32,12 @@ def test_parse():
 def test_route():
     from http_router import Route
 
-    route = Route('/only-post', None, ['POST', 'PUT'])
-    assert route.match('/only-post') is not None
+    route = Route('/only-post', ['POST'])
+    assert route.methods
+    assert route.match('/only-post', 'POST')
+    assert not route.match('/only-post')
 
-    route = Route('/only-post', None)
+    route = Route('/only-post')
     assert not route.methods
 
 
@@ -43,19 +45,19 @@ def test_dynamic_route():
     from http_router import DynamicRoute
 
     route = DynamicRoute(r'/order/{id:\d+}')
-    match, cb, params = route.match('/order/100')
-    assert match
-    assert params == {'id': '100'}
+    match = route.match('/order/100')
+    assert match.path
+    assert match.path_params == {'id': '100'}
 
-    match, cb, params = route.match('/order/unknown')
+    match = route.match('/order/unknown')
     assert not match
-    assert not params
+    assert not match.path_params
 
     route = DynamicRoute('/regex(/opt)?')
-    match, cb, params = route.match('/regex')
+    match = route.match('/regex')
     assert match
 
-    match, cb, params = route.match('/regex/opt')
+    match = route.match('/regex/opt')
     assert match
 
 
@@ -75,21 +77,21 @@ def test_router():
 
     cb, opts = router('/', 'POST')
     assert cb == 'simple'
-    assert opts == {}
+    assert not opts
 
     cb, opts = router('/simple', 'DELETE')
     assert cb == 'simple'
-    assert opts == {}
+    assert not opts
 
     router.route('/regex(/opt)?', methods=('GET', 'PATCH'))('opt')
 
     cb, opts = router('/regex', 'PATCH')
     assert cb == 'opt'
-    assert opts == {}
+    assert not opts
 
     cb, opts = router('/regex/opt', 'PATCH')
     assert cb == 'opt'
-    assert opts == {}
+    assert not opts
 
     router.route('/only-post', methods='post')('only-post')
     assert router.plain['/only-post'][0].methods == {'POST'}
@@ -99,7 +101,7 @@ def test_router():
 
     cb, opts = router('/only-post', 'POST')
     assert cb == 'only-post'
-    assert opts == {}
+    assert not opts
 
     router.route(r'/dynamic1/{id}/?')('dyn1')
     router.route(r'/dynamic2/{ id }/?')('dyn2')
@@ -133,13 +135,13 @@ def test_mounts():
 
     route = Mount('/api/')
     assert route.pattern == '/api'
-    match, cb, params = route.match('/api/e1')
+    match = route.match('/api/e1')
     assert not match
 
     route.route('/e1')('e1')
-    match, cb, params = route.match('/api/e1')
+    match = route.match('/api/e1')
     assert match
-    assert cb == 'e1'
+    assert match.callback == 'e1'
 
 
 def test_cb_validator():
@@ -180,8 +182,8 @@ def test_nested_routers():
     from http_router import Router
 
     child = Router()
-    child.route('/url')('child_url')
-    cb, _ = child('/url')
+    child.route('/url', methods='PATCH')('child_url')
+    cb, _ = child('/url', 'PATCH')
     assert cb == 'child_url'
 
     root = Router()
@@ -193,7 +195,24 @@ def test_nested_routers():
     with pytest.raises(root.NotFound):
         root('/child/unknown')
 
-    cb, _ = root('/child/url')
+    with pytest.raises(root.MethodNotAllowed):
+        root('/child/url')
+
+    cb, _ = root('/child/url', 'PATCH')
     assert cb is 'child_url'
+
+
+def test_readme():
+    from http_router import Router
+
+    router = Router(trim_last_slash=True)
+
+    @router.route('/simple')
+    def simple():
+        return 'simple'
+
+    fn, path_params = router('/simple')
+    assert fn() == 'simple'
+    assert path_params is None
 
 #  pylama:ignore=D
