@@ -33,7 +33,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: env
-        key: ${{ runner.os }}-env-${{ hashFiles('setup.cfg') }}-{{ matrix.python-version }}
+        key: ${{ runner.os }}-env-${{ hashFiles('setup.cfg') }}-${{ matrix.python-version }}
 
     - name: Setup requirements
       run: |
