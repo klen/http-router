@@ -15,6 +15,10 @@ HTTP Router
     :target: https://pypi.org/project/http-router/
     :alt: PYPI Version
 
+.. image:: https://img.shields.io/pypi/pyversions/http-router
+    :target: https://pypi.org/project/http-router/
+    :alt: Python Versions
+
 .. _contents:
 
 .. contents::
@@ -24,7 +28,7 @@ HTTP Router
 Requirements
 =============
 
-- python >= 3.6
+- python >= 3.7
 
 .. _installation:
 

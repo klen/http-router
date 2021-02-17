@@ -129,6 +129,9 @@ def test_router():
     cb, opts = router('/params', 'POST')
     assert cb() == {'var': 'value'}
 
+    assert router.routes()
+    assert router.routes()[0].path == '/'
+
 
 def test_mounts():
     from http_router import Mount

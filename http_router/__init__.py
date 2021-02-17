@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses as dc
 import abc
 import re
@@ -63,9 +65,17 @@ class BaseRoute(metaclass=abc.ABCMeta):
     pattern: str
     methods: t.Set[str] = dc.field(default_factory=lambda: set())
 
+    def __lt__(self, route: BaseRoute):
+        assert isinstance(route, BaseRoute), 'Only routes are supported'
+        return self.path < route.path
+
+    @property
+    def path(self):
+        return self.pattern
+
     @abc.abstractmethod
     def match(self, path: str, method: str = 'GET') -> RouteMatch:
-        pass
+        raise NotImplementedError
 
 
 @dc.dataclass
@@ -99,6 +109,10 @@ class DynamicRoute(Route):
             bool(match), not self.methods or method in self.methods,
             self.callback, {key: unquote(value) for key, value in match.groupdict('').items()}
         )
+
+    @property
+    def path(self):
+        return self.pattern.pattern
 
 
 @dc.dataclass
@@ -216,6 +230,10 @@ class Router:
             return wrapper(path)
 
         return wrapper
+
+    def routes(self) -> t.List[Route]:
+        """Get a list of self routes."""
+        return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
 
 # pylama: ignore=D
