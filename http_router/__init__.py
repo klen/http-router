@@ -231,7 +231,7 @@ class Router:
 
         return wrapper
 
-    def routes(self) -> t.List[Route]:
+    def routes(self) -> t.List[BaseRoute]:
         """Get a list of self routes."""
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
