@@ -9,7 +9,7 @@ import pytest
 
 @pytest.fixture
 def router():
-    from http_router import Router
+    from http_router import Router, NotFound, MethodNotAllowed, RouterError
 
     return Router()
 

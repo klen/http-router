@@ -5,24 +5,9 @@ import typing as t
 from collections import defaultdict
 from functools import partial, lru_cache
 
+from . import NotFound, RouterError, MethodNotAllowed  # noqa
 from .utils import parse_path
 from ._types import CBV, CB, TYPE_METHODS, TYPE_PATH
-
-
-__version__ = "0.8.1"
-__license__ = "MIT"
-
-
-class RouterError(Exception):
-    pass
-
-
-class NotFound(RouterError):
-    pass
-
-
-class MethodNotAllowed(RouterError):
-    pass
 
 
 @dc.dataclass(unsafe_hash=True)
@@ -32,9 +17,9 @@ class Router:
     trim_last_slash: bool = False
     validator: CBV = dc.field(default=lambda cb: True, repr=False, hash=False, compare=False)
 
-    NotFound: t.ClassVar[t.Type[Exception]] = NotFound
-    RouterError: t.ClassVar[t.Type[Exception]] = RouterError
-    MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed
+    NotFound: t.ClassVar[t.Type[Exception]] = NotFound                  # noqa
+    RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
+    MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
 
     def __post_init__(self):
         """Initialize the router."""
