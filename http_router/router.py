@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses as dc
 import typing as t
 from collections import defaultdict
 from functools import partial, lru_cache
@@ -10,19 +9,17 @@ from .utils import parse_path
 from ._types import CBV, CB, TYPE_METHODS, TYPE_PATH
 
 
-@dc.dataclass(unsafe_hash=True)
 class Router:
     """Route HTTP queries."""
-
-    trim_last_slash: bool = False
-    validator: CBV = dc.field(default=lambda cb: True, repr=False, hash=False, compare=False)
 
     NotFound: t.ClassVar[t.Type[Exception]] = NotFound                  # noqa
     RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
     MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
 
-    def __post_init__(self):
+    def __init__(self, trim_last_slash: bool = False, validator: CBV = None):
         """Initialize the router."""
+        self.trim_last_slash = trim_last_slash
+        self.validator = validator or (lambda v: True)
         self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
         self.dynamic: t.List[BaseRoute] = list()
 
