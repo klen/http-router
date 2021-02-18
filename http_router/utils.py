@@ -16,7 +16,7 @@ PARAM_TYPES = {
 }
 
 
-def parse_path(path: TYPE_PATH) -> t.Tuple[str, t.Optional[t.Pattern], t.Dict[str, type]]:
+def parse_path(path: TYPE_PATH) -> t.Tuple[str, t.Optional[t.Pattern], t.Dict[str, t.Callable]]:
     """Prepare the given path to regexp it."""
     if isinstance(path, t.Pattern):
         return path.pattern, path, {}
