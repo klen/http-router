@@ -6,8 +6,10 @@ from ._types import TYPE_PATH
 
 
 INDENTITY = lambda v: v  # noqa
-PARAM_RE = re.compile(r"<([a-zA-Z_][a-zA-Z0-9_]+)(:[^>]+)?>")
-PARAM_TYPES = {
+
+
+VAR_RE = re.compile(r'^(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<var_type>.+))?$')
+VAR_TYPES = {
     'float': (r"\d+(\.\d+)?", float),
     'int': (r"\d+", int),
     'path': (r".*", str),
@@ -21,21 +23,38 @@ def parse_path(path: TYPE_PATH) -> t.Tuple[str, t.Optional[t.Pattern], t.Dict[st
     if isinstance(path, t.Pattern):
         return path.pattern, path, {}
 
-    source, path, regex, idx, convertors = path.strip(' '), '', '^', 0, {}
-    for match in PARAM_RE.finditer(source):
-        pname, ptype = match.groups('str')
-        ptype = ptype.lstrip(':')
-        tregex, convertors[pname] = PARAM_TYPES.get(ptype, (ptype, INDENTITY))
-        regex += re.escape(source[idx:match.start()])
-        regex += f"(?P<{pname}>{tregex})"
-        path += source[idx:match.start()]
-        path += f"<{pname}>"
+    src, regex, path = path.strip(' '), '^', ''
+    params = {}
+    idx, cur, group = 0, 0, None
+    while cur < len(src):
+        sym = src[cur]
+        cur += 1
 
-        idx = match.end()
+        if sym == '{':
+            if group:
+                cur = src.find('}', cur) + 1
+                continue
+
+            group = cur
+            continue
+
+        if sym == '}' and group:
+            part = src[group: cur - 1]
+            length = len(part)
+            match = VAR_RE.match(part.strip())
+            if match:
+                opts = match.groupdict('str')
+                var_type_re, params[opts['var']] = VAR_TYPES.get(
+                    opts['var_type'], (opts['var_type'], INDENTITY))
+                regex += re.escape(src[idx:group - 1]) + f"(?P<{ opts['var'] }>{ var_type_re })"
+                path += src[idx:group - 1] + f"{{{opts['var']}}}"
+                cur = idx = group + length + 1
+
+            group = None
 
     if not path:
-        return source, None, convertors
+        return src, None, params
 
-    regex += re.escape(source[idx:]) + '$'
-    path += source[idx:]
-    return path, re.compile(regex), convertors
+    regex += re.escape(src[idx:]) + '$'
+    path += src[idx:]
+    return path, re.compile(regex), params

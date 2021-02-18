@@ -48,50 +48,56 @@ def test_router_route_str(router):
     with pytest.raises(router.NotFound):
         router('test.jpeg')
 
-    router.route('/any/<item>')(True)
+    router.route('/any/{item}')(True)
     match = router('/any/test')
     assert match
     assert match.path_params == {'item': 'test'}
 
-    router.route('/str/<item:str>')(True)
+    router.route('/str/{item:str}')(True)
     match = router('/str/42')
     assert match
     assert match.path_params == {'item': '42'}
 
-    router.route('/int/<item:int>')(True)
+    router.route('/int/{item:int}')(True)
     match = router('/int/42')
     assert match
     assert match.path_params == {'item': 42}
 
-    router.route(r'/regex/<item:\d{3}>')(True)
+    router.route(r'/regex/{item:\d{3}}')(True)
     match = router('/regex/422')
     assert match
     assert match.path_params == {'item': '422'}
 
 
-def test_compile_path():
+def test_parse_path():
     from http_router.utils import parse_path
 
     assert parse_path('/') == ('/', None, {})
     assert parse_path('/test.jpg') == ('/test.jpg', None, {})
     assert parse_path('/{foo') == ('/{foo', None, {})
 
-    path, regex, convertors = parse_path(r'/<foo>/')
+    path, regex, params = parse_path(r'/{foo}/')
     assert isinstance(regex, t.Pattern)
     assert regex.pattern == r'^/(?P<foo>[^/]+)/$'
-    assert path == '/<foo>/'
-    assert convertors == {'foo': str}
+    assert path == '/{foo}/'
+    assert params == {'foo': str}
 
-    path, regex, convertors = parse_path(r'/<foo:int>/')
+    path, regex, params = parse_path(r'/{foo:int}/')
     assert isinstance(regex, t.Pattern)
     assert regex.pattern == r'^/(?P<foo>\d+)/$'
-    assert path == '/<foo>/'
-    assert convertors == {'foo': int}
+    assert path == '/{foo}/'
+    assert params == {'foo': int}
 
-    path, regex, convertors = parse_path(re(r'/(?P<foo>\d{1,3})/'))
+    path, regex, params = parse_path(re(r'/(?P<foo>\d{1,3})/'))
     assert isinstance(regex, t.Pattern)
-    assert convertors == {}
+    assert params == {}
     assert path
+
+    path, regex, params = parse_path(r'/api/v1/items/{item:str}/subitems/{ subitem:\d{3} }/find')
+    assert path == '/api/v1/items/{item}/subitems/{subitem}/find'
+    assert regex.match('/api/v1/items/foo/subitems/300/find')
+    assert params['item']
+    assert params['subitem']
 
 
 def test_route():
@@ -109,7 +115,7 @@ def test_route():
 def test_dynamic_route():
     from http_router.routes import DynamicRoute
 
-    route = DynamicRoute(r'/order/<id:int>')
+    route = DynamicRoute(r'/order/{id:int}')
     match = route.match('/order/100')
     assert match.path
     assert match.path_params == {'id': 100}
@@ -158,8 +164,8 @@ def test_router():
     assert cb == 'only-post'
     assert not opts
 
-    router.route('/dynamic1/<id>')('dyn1')
-    router.route('/dynamic2/<id>')('dyn2')
+    router.route('/dynamic1/{id}')('dyn1')
+    router.route('/dynamic2/{ id }')('dyn2')
 
     cb, opts = router('/dynamic1/11/')
     assert cb == 'dyn1'
@@ -169,7 +175,7 @@ def test_router():
     assert cb == 'dyn2'
     assert opts == {'id': '22'}
 
-    @router.route(r'/hello/<name:str>', methods='post')
+    @router.route(r'/hello/{name:str}', methods='post')
     def hello():
         return 'hello'
 
@@ -189,6 +195,7 @@ def test_router():
 
 
 def test_mounts():
+    from http_router import Router
     from http_router.routes import Mount
 
     route = Mount('/api/')
@@ -200,6 +207,17 @@ def test_mounts():
     match = route.match('/api/e1')
     assert match
     assert match.target == 'e1'
+
+    root = Router()
+    subrouter = Router()
+
+    root.route('/api')(1)
+    root.route(re('/api/test'))(2)
+    root.route('/api')(subrouter)
+    subrouter.route('/test')(3)
+
+    assert root('/api').target == 1
+    assert root('/api/test').target == 3
 
 
 def test_cb_validator():

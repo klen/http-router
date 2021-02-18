@@ -84,7 +84,7 @@ But the lib has a simplier interface for the dynamic routes:
 
 .. code:: python
 
-    @router.route('/users/<username>')
+    @router.route('/users/{username}')
     def users():
         return 'result from the fn'
 
@@ -92,7 +92,7 @@ By default this will capture characters up to the end of the path or the next
 ``/``.
 
 Optionally, you can use a converter to specify the type of the argument like
-<variable_name:converter>.
+``{variable_name:converter}``.
 
 Converter types:
 
@@ -108,7 +108,7 @@ Convertors are used by prefixing them with a colon, like so:
 
 .. code:: python
 
-    @router.route('/orders/<order_id:int>')
+    @router.route('/orders/{order_id:int}')
     def orders():
         return 'result from the fn'
 
@@ -116,7 +116,7 @@ Any unknown convertor will be parsed as a regex:
 
 .. code:: python
 
-    @router.route('/orders/<order_id:\d{3}>')
+    @router.route('/orders/{order_id:\d{3}}')
     def orders():
         return 'result from the fn'
 

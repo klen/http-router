@@ -46,7 +46,7 @@ class Router:
                   methods: TYPE_METHODS = None, **params):
         """Bind self as a nested router."""
         route = Mount(prefix, router=self)
-        root.dynamic.append(route)
+        root.dynamic.insert(0, route)
         return self
 
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
