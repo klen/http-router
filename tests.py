@@ -1,36 +1,101 @@
 """HTTP Router tests."""
 
 import inspect
-import pytest
 import typing as t
+from re import compile as re
+
+import pytest
 
 
-def test_parse():
-    from http_router import parse
+@pytest.fixture
+def router():
+    from http_router import Router
 
-    assert isinstance(parse('/'), str)
-    assert isinstance(parse('/test.jpg'), str)
-    assert isinstance(parse('/{foo'), str)
+    return Router()
 
-    res = parse(r'/{foo}/')
-    assert isinstance(res, t.Pattern)
-    assert res.pattern == r'/(?P<foo>[^/]+)/$'
 
-    res = parse(r'/{foo}/?')
-    assert isinstance(res, t.Pattern)
-    assert res.pattern == r'/(?P<foo>[^/]+)/?$'
+def test_router_basic(router):
+    assert router
+    assert not router.trim_last_slash
+    assert router.validator
+    assert router.NotFound
+    assert router.RouterError
+    assert router.MethodNotAllowed
 
-    res = parse(r'/{foo:\d+}/')
-    assert isinstance(res, t.Pattern)
-    assert res.pattern == r'/(?P<foo>\d+)/$'
 
-    res = parse(r'/{foo:\d{1,3}}/')
-    assert isinstance(res, t.Pattern)
-    assert res.pattern == r'/(?P<foo>\d{1,3})/$'
+def test_router_route_re(router):
+    router.route(re('test.jpg'))('test1 passed')
+    assert router('test.jpg').target == 'test1 passed'
+    assert router('testAjpg').target == 'test1 passed'
+    assert router('testAjpg/regex/can/be/dangerous').target == 'test1 passed'
+
+    router.route(re(r'params/(\w+)'))('test2 passed')
+    match = router('params/mike')
+    assert match
+    assert not match.path_params
+
+    router.route(re(r'params2/(?P<User>\w+)'))('test3 passed')
+    match = router('params2/mike')
+    assert match
+    assert match.path_params == {'User': 'mike'}
+
+
+def test_router_route_str(router):
+    router.route('test.jpg')(True)
+    match = router('test.jpg')
+    assert match
+
+    with pytest.raises(router.NotFound):
+        router('test.jpeg')
+
+    router.route('/any/<item>')(True)
+    match = router('/any/test')
+    assert match
+    assert match.path_params == {'item': 'test'}
+
+    router.route('/str/<item:str>')(True)
+    match = router('/str/42')
+    assert match
+    assert match.path_params == {'item': '42'}
+
+    router.route('/int/<item:int>')(True)
+    match = router('/int/42')
+    assert match
+    assert match.path_params == {'item': 42}
+
+    router.route(r'/regex/<item:\d{3}>')(True)
+    match = router('/regex/422')
+    assert match
+    assert match.path_params == {'item': '422'}
+
+
+def test_compile_path():
+    from http_router.utils import parse_path
+
+    assert parse_path('/') == ('/', None, {})
+    assert parse_path('/test.jpg') == ('/test.jpg', None, {})
+    assert parse_path('/{foo') == ('/{foo', None, {})
+
+    path, regex, convertors = parse_path(r'/<foo>/')
+    assert isinstance(regex, t.Pattern)
+    assert regex.pattern == r'^/(?P<foo>[^/]+)/$'
+    assert path == '/<foo>/'
+    assert convertors == {'foo': str}
+
+    path, regex, convertors = parse_path(r'/<foo:int>/')
+    assert isinstance(regex, t.Pattern)
+    assert regex.pattern == r'^/(?P<foo>\d+)/$'
+    assert path == '/<foo>/'
+    assert convertors == {'foo': int}
+
+    path, regex, convertors = parse_path(re(r'/(?P<foo>\d{1,3})/'))
+    assert isinstance(regex, t.Pattern)
+    assert convertors == {}
+    assert path
 
 
 def test_route():
-    from http_router import Route
+    from http_router.routes import Route
 
     route = Route('/only-post', ['POST'])
     assert route.methods
@@ -42,18 +107,18 @@ def test_route():
 
 
 def test_dynamic_route():
-    from http_router import DynamicRoute
+    from http_router.routes import DynamicRoute
 
-    route = DynamicRoute(r'/order/{id:\d+}')
+    route = DynamicRoute(r'/order/<id:int>')
     match = route.match('/order/100')
     assert match.path
-    assert match.path_params == {'id': '100'}
+    assert match.path_params == {'id': 100}
 
     match = route.match('/order/unknown')
     assert not match
     assert not match.path_params
 
-    route = DynamicRoute('/regex(/opt)?')
+    route = DynamicRoute(re('/regex(/opt)?'))
     match = route.match('/regex')
     assert match
 
@@ -83,16 +148,6 @@ def test_router():
     assert cb == 'simple'
     assert not opts
 
-    router.route('/regex(/opt)?', methods=('GET', 'PATCH'))('opt')
-
-    cb, opts = router('/regex', 'PATCH')
-    assert cb == 'opt'
-    assert not opts
-
-    cb, opts = router('/regex/opt', 'PATCH')
-    assert cb == 'opt'
-    assert not opts
-
     router.route('/only-post', methods='post')('only-post')
     assert router.plain['/only-post'][0].methods == {'POST'}
 
@@ -103,8 +158,8 @@ def test_router():
     assert cb == 'only-post'
     assert not opts
 
-    router.route(r'/dynamic1/{id}/?')('dyn1')
-    router.route(r'/dynamic2/{ id }/?')('dyn2')
+    router.route('/dynamic1/<id>')('dyn1')
+    router.route('/dynamic2/<id>')('dyn2')
 
     cb, opts = router('/dynamic1/11/')
     assert cb == 'dyn1'
@@ -114,7 +169,7 @@ def test_router():
     assert cb == 'dyn2'
     assert opts == {'id': '22'}
 
-    @router.route(r'/hello/{ name:\w+ }/?', methods='post')
+    @router.route(r'/hello/<name:str>', methods='post')
     def hello():
         return 'hello'
 
@@ -134,24 +189,24 @@ def test_router():
 
 
 def test_mounts():
-    from http_router import Mount
+    from http_router.routes import Mount
 
     route = Mount('/api/')
-    assert route.pattern == '/api'
+    assert route.path == '/api'
     match = route.match('/api/e1')
     assert not match
 
     route.route('/e1')('e1')
     match = route.match('/api/e1')
     assert match
-    assert match.callback == 'e1'
+    assert match.target == 'e1'
 
 
 def test_cb_validator():
     from http_router import Router
 
     # The router only accepts async functions
-    router = Router(validate_cb=inspect.iscoroutinefunction)
+    router = Router(validator=inspect.iscoroutinefunction)
 
     with pytest.raises(router.RouterError):
         router.route('/', '/simple')(lambda: 'simple')
@@ -202,7 +257,7 @@ def test_nested_routers():
         root('/child/url')
 
     cb, _ = root('/child/url', 'PATCH')
-    assert cb is 'child_url'
+    assert cb == 'child_url'
 
 
 def test_readme():
@@ -217,5 +272,16 @@ def test_readme():
     fn, path_params = router('/simple')
     assert fn() == 'simple'
     assert path_params is None
+
+
+def test_method_shortcuts(router):
+    router.delete('/delete')('DELETE')
+    router.get('/get')('GET')
+    router.post('/post')('POST')
+
+    for route in router.routes():
+        method = route.target
+        assert route.methods == {method}
+
 
 #  pylama:ignore=D

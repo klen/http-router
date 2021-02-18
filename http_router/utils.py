@@ -1,49 +1,41 @@
-"""HTTP Router Utils."""
-
-import typing as t
 import re
+import typing as t
+from uuid import UUID
 
-DYNR_RE = re.compile(r'^\s*(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<re>.+))*\s*$')
+from ._types import TYPE_PATH
 
 
-def regexize(path: str) -> str:
+INDENTITY = lambda v: v  # noqa
+PARAM_RE = re.compile(r"<([a-zA-Z_][a-zA-Z0-9_]+)(:[^>]+)?>")
+PARAM_TYPES = {
+    'float': (r"\d+(\.\d+)?", float),
+    'int': (r"\d+", int),
+    'path': (r".*", str),
+    'str': (r"[^/]+", str),
+    'uuid': (r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", UUID)
+}
+
+
+def parse_path(path: TYPE_PATH) -> t.Tuple[str, t.Optional[t.Pattern], t.Dict[str, type]]:
     """Prepare the given path to regexp it."""
-    path = path.strip(' ')
-    idx, group = 0, None
-    start, end = '{', '}'
-    while idx < len(path):
-        sym = path[idx]
-        idx += 1
+    if isinstance(path, t.Pattern):
+        return path.pattern, path, {}
 
-        if sym == start:
-            if group:
-                idx = path.find(end, idx) + 1
-                continue
+    source, path, regex, idx, convertors = path.strip(' '), '', '^', 0, {}
+    for match in PARAM_RE.finditer(source):
+        pname, ptype = match.groups('str')
+        ptype = ptype.lstrip(':')
+        tregex, convertors[pname] = PARAM_TYPES.get(ptype, (ptype, INDENTITY))
+        regex += re.escape(source[idx:match.start()])
+        regex += f"(?P<{pname}>{tregex})"
+        path += source[idx:match.start()]
+        path += f"<{pname}>"
 
-            group = idx
-            continue
+        idx = match.end()
 
-        if sym == end and group:
-            part = path[group: idx - 1]
-            match = DYNR_RE.match(part)
-            if match:
-                params = match.groupdict()
-                params['re'] = params['re'] or '[^/]+'
-                restr = '(?P<%s>%s)' % (params['var'], params['re'].strip())
-                path = path[:group - 1] + restr + path[idx:]
-                idx = group + len(restr)
+    if not path:
+        return source, None, convertors
 
-            group = None
-
-    return path.rstrip('$')
-
-
-def parse(path: str) -> t.Union[str, t.Pattern]:
-    """Parse URL path and convert it to regexp if needed."""
-    pattern = regexize(path)
-    parsed = re.sre_parse.parse(pattern)  # type: ignore
-    for case, _ in parsed:
-        if case not in (re.sre_parse.LITERAL, re.sre_parse.ANY):  # type: ignore
-            return re.compile('%s$' % pattern)
-
-    return pattern
+    regex += re.escape(source[idx:]) + '$'
+    path += source[idx:]
+    return path, re.compile(regex), convertors

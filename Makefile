@@ -62,3 +62,7 @@ mypy: $(VIRTUAL_ENV)
 
 example: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/python example.py
+
+benchmark: $(VIRTUAL_ENV)
+	$(VIRTUAL_ENV)/bin/python benchmark.py
+

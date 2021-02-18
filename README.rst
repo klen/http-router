@@ -43,6 +43,8 @@ Installation
 Usage
 =====
 
+Create a router:
+
 .. code:: python
     
     from http_router import Router
@@ -52,119 +54,108 @@ Usage
     router = Router(trim_last_slash=True)
 
 
-    # Plain path
-    # ----------
+Define routes:
+
+.. code:: python
+
     @router.route('/simple')
     def simple():
-        return 'simple'
+        return 'result from the fn'
+
+Call the router with HTTP path and optionally method to get a match result.
+
+.. code:: python
+
+   match = router('/simple', method='GET')
+   assert match, 'HTTP path is ok'
+   assert match.target is simple
+
+The router supports regex objects too:
+
+.. code:: python
+
+    import re
+
+    @router.route(re.compile(r'/regexp/\w{3}-\d{2}/?'))
+    def regex():
+        return 'result from the fn'
+
+But the lib has a simplier interface for the dynamic routes:
+
+.. code:: python
+
+    @router.route('/users/<username>')
+    def users():
+        return 'result from the fn'
+
+By default this will capture characters up to the end of the path or the next
+``/``.
+
+Optionally, you can use a converter to specify the type of the argument like
+<variable_name:converter>.
+
+Converter types:
+
+========= ====================================
+``str``   (default) accepts any text without a slash
+``int``   accepts positive integers
+``float`` accepts positive floating point values
+``path``  like string but also accepts slashes
+``uuid``  accepts UUID strings
+========= ====================================
+
+Convertors are used by prefixing them with a colon, like so:
+
+.. code:: python
+
+    @router.route('/orders/<order_id:int>')
+    def orders():
+        return 'result from the fn'
+
+Any unknown convertor will be parsed as a regex:
+
+.. code:: python
+
+    @router.route('/orders/<order_id:\d{3}>')
+    def orders():
+        return 'result from the fn'
 
 
-    # Get a binded function and options by the given path
-    fn, path_params = router('/simple')
-    print(fn, path_params)
-    #
-    # >> <function simple> None
-    #
-    assert fn() == 'simple'
+Multiple paths are supported as well:
 
-    # The Router will raise a Router.NotFound for an unknown path
-    try:
-        fn, path_params = router('/unknown')
-    except router.NotFound as exc:
-        print("%r" % exc)
-        #
-        # >> NotFound('/unknown', 'GET')
-        #
+.. code:: python
 
-
-    # Multiple paths are supported as well
-    # ------------------------------------
     @router.route('/', '/home')
     def index():
         return 'index'
 
 
-    print(router('/'))
-    #
-    # >> RouteMatch 200 (<function index>, None)
-    #
+Handling HTTP methods:
 
-    print(router('/home'))
-    #
-    # >> RouteMatch 200 (<function index>, None)
-    #
+.. code:: python
 
-
-    # Bind HTTP Methods
-    # -----------------
     @router.route('/only-post', methods=['POST'])
     def only_post():
         return 'only-post'
 
 
-    # The Router will raise a Router.MethodNotAllowed for an unsupported method
-    try:
-        print(router('/only-post', method='GET'))
-    except router.MethodNotAllowed as exc:
-        print("%r" % exc)
+Submounting routes:
 
-        #
-        # >> MethodNotAllowed('/only-post', 'GET')
-        #
+.. code:: python
 
-    print(router('/only-post', method='POST'))
-    #
-    # >> RouteMatch 200 (<function only-post>, None)
-    #
+   subrouter = Router()
 
-
-    # Regex Expressions are supported
-    # -------------------------------
-    @router.route('/regex(/opt)?')
-    def optional():
-        return 'opt'
-
-
-    print(router('/regex', method='POST'))
-    #
-    # >> RouteMatch 200 (<function optional>, {})
-    #
-
-    print(router('/regex/opt', method='POST'))
-    #
-    # >> RouteMatch 200 (<function optional>, {})
-    #
-
-
-    # Dynamic routes are here
-    # -----------------------
-    @router.route('/order1/{id}')
-    def order1(id=None):
-        return 'order-%s' % id
-
-
-    print(router('/order1/42'))
-    #
-    # >> RouteMatch 200 (<function order1>, {'id': '42'})
-    #
-
-
-    # Dynamic routes with regex
-    # -------------------------
-    @router.route(r'/order2/{ id:\d{3} }')
-    def order2(id=None):
-        return 'order-%s' % id
-
-
-    print(router('/order2/100'))
-    #
-    # >> RouteMatch 200 (<function order1>, {'id': '100'})
-    #
-
-    try:
-        print(router('/order2/03'))
-    except router.NotFound:
+   @subrouter('/items')
+   def items():
         pass
+
+    router = Router()
+    router.route('/api')(subrouter)
+
+
+   match = router('/api/items', method='GET')
+   assert match, 'HTTP path is ok'
+   assert match.target is items
 
 
 .. _bugtracker:
