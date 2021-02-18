@@ -61,11 +61,11 @@ class Router:
         routes = []
 
         for path in paths:
-            path, pattern, convertors = parse_path(path)
+            path, pattern, params = parse_path(path)
 
             if pattern:
                 route: Route = DynamicRoute(path=path, methods=methods,
-                                            target=target, pattern=pattern, convertors=convertors)
+                                            target=target, pattern=pattern, params=params)
                 self.dynamic.append(route)
 
             else:

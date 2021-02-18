@@ -63,11 +63,11 @@ class DynamicRoute(Route):
     """Base dynamic route class."""
 
     pattern: t.Optional[t.Pattern] = None
-    convertors: t.Dict = dc.field(default_factory=dict, repr=False)
+    params: t.Dict = dc.field(default_factory=dict, repr=False)
 
     def __post_init__(self):
         if self.pattern is None:
-            self.path, self.pattern, self.convertors = parse_path(self.path)
+            self.path, self.pattern, self.params = parse_path(self.path)
             assert self.pattern, 'Invalid path'
 
     def match(self, path: str, method: str = 'GET') -> RouteMatch:
@@ -76,7 +76,7 @@ class DynamicRoute(Route):
             return RouteMatch(target=self.target)
 
         path_params = {
-            key: self.convertors.get(key, INDENTITY)(unquote(value))
+            key: self.params.get(key, INDENTITY)(unquote(value))
             for key, value in match.groupdict().items()
         }
 
