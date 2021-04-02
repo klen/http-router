@@ -220,6 +220,34 @@ def test_mounts():
     assert root('/api/test').target == 3
 
 
+def test_trim_last_slash():
+    from http_router import Router
+
+    router = Router()
+
+    router.route('/route1')('route1')
+    router.route('/route2/')('route2')
+
+    assert router('/route1').target == 'route1'
+    assert router('/route2/').target == 'route2'
+
+    with pytest.raises(router.NotFound):
+        assert not router('/route1/')
+
+    with pytest.raises(router.NotFound):
+        assert not router('/route2')
+
+    router = Router(trim_last_slash=True)
+
+    router.route('/route1')('route1')
+    router.route('/route2/')('route2')
+
+    assert router('/route1').target == 'route1'
+    assert router('/route2/').target == 'route2'
+    assert router('/route1/').target == 'route1'
+    assert router('/route2').target == 'route2'
+
+
 def test_cb_validator():
     from http_router import Router
 

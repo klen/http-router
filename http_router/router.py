@@ -61,6 +61,9 @@ class Router:
         routes = []
 
         for path in paths:
+            if self.trim_last_slash and isinstance(path, str):
+                path = path.rstrip('/') or '/'
+
             path, pattern, params = parse_path(path)
 
             if pattern:
