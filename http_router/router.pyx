@@ -14,28 +14,32 @@ cdef class Router:
     RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
     MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
 
-    def __init__(self, trim_last_slash: bool = False, validator: CBV = None):
+    def __init__(self, bint trim_last_slash = False, validator: CBV = None):
         """Initialize the router."""
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
         self.plain: t.Dict[str, t.List[BaseRoute]] = {}
         self.dynamic: t.List[BaseRoute] = []
 
-    def __call__(self, path: str, method: str = "GET") -> 'RouteMatch':
+    def __call__(self, str path, str method = "GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
 
-        methods: t.Set = set()
-        for route in self.plain.get(path, self.dynamic):
+        cdef list routes = self.plain.get(path, self.dynamic)
+        cdef bint methods = False
+        cdef RouteMatch match
+        cdef BaseRoute route
+
+        for route in routes:
             match = route.match(path, method)
             if match.path:
                 if match.method:
                     return match
-                methods |= route.methods
+                methods = True
 
         if methods:
-            raise self.MethodNotAllowed(path, method, methods)
+            raise self.MethodNotAllowed(path, method)
 
         raise self.NotFound(path, method)
 
@@ -112,6 +116,6 @@ cdef class Router:
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
 
-from .routes import BaseRoute, RouteMatch, Route, DynamicRoute, Mount  # noqa
+from .routes cimport BaseRoute, RouteMatch, Route, DynamicRoute, Mount  # noqa
 
 # pylama: ignore=D

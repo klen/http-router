@@ -64,8 +64,8 @@ mypy: $(VIRTUAL_ENV)
 example: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/python example.py
 
-$(PACKAGE)/%.c: http_router/%.pyx http_router/%.pxd
-	$(VIRTUAL_ENV)/bin/cython $<
+$(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
+	$(VIRTUAL_ENV)/bin/cython -a $<
 
 compile: $(PACKAGE)/router.c $(PACKAGE)/routes.c
 	$(VIRTUAL_ENV)/bin/python setup.py build_ext --inplace

@@ -9,58 +9,51 @@ from .utils import parse_path, INDENTITY
 cdef class RouteMatch:
     """Keeping route matching data."""
 
-    def __init__(self, path: bool = False, method: bool = False,
-                 target: t.Any = None, path_params: t.Mapping[str, t.Any] = None):
-
+    def __cinit__(self, bint path, bint method, object target=None, dict params=None):
         self.path = path
         self.method = method
         self.target = target
-        self.path_params = path_params
+        self.params = params
 
     def __bool__(self) -> bool:
         return self.path and self.method
 
-    def __iter__(self) -> Iterator:
-        return iter((self.target, self.path_params))
-
-    def __str__(self) -> str:
-        status = self.path and 200 or self.method and 404 or 405
-        return f"RouteMatch {status} ({self.target}, {self.path_params!r})"
-
 
 cdef class BaseRoute:
 
-    def __init__(self, path: str, methods: t.Sequence[str] = None):
+    def __init__(self, str path, set methods):
         self.path = path
-        self.methods = set(methods or set())
+        self.methods = methods
 
-    def __lt__(self, route: 'BaseRoute') -> bool:
-        assert isinstance(route, BaseRoute), 'Only routes are supported'
+    def __lt__(self, BaseRoute route) -> bool:
         return self.path < route.path
 
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
+    cpdef RouteMatch match(self, str path, str method):
         raise NotImplementedError
 
 
 cdef class Route(BaseRoute):
     """Base plain route class."""
 
-    def __init__(self, path: str, methods: t.Sequence[str] = None, target: t.Any = None):
+    def __init__(self, str path, set methods, object target=None):
         super(Route, self).__init__(path, methods)
         self.target = target
 
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
+    cpdef RouteMatch match(self, str path, str method):
         """Is the route match the path."""
-        return RouteMatch(
-            path == self.path,
-            not self.methods or method in self.methods, self.target)
+        cdef bint path_ = self.path == path
+        cdef bint method_ = not self.methods or method in self.methods
+        if not (path_ and method_):
+            return RouteMatch(path_, method_)
+
+        return RouteMatch(path_, method_, self.target)
 
 
 cdef class DynamicRoute(Route):
     """Base dynamic route class."""
 
-    def __init__(self, path: t.Union[str, t.Pattern], methods: t.Sequence[str] = None,
-                 target: t.Any = None, pattern: t.Pattern = None, params: t.Dict = None):
+    def __init__(self, path: t.Union[str, t.Pattern], set methods,
+                 object target=None, pattern: t.Pattern = None, params: t.Dict = None):
 
         if pattern is None:
             path, pattern, params = parse_path(path)
@@ -68,29 +61,28 @@ cdef class DynamicRoute(Route):
 
         self.pattern = pattern
         self.params = params
+        self.path = path
+        self.methods = methods
+        self.target = target
 
-        super(DynamicRoute, self).__init__(path, methods, target)
-
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
+    cpdef RouteMatch match(self, str path, str method):
         match = self.pattern.match(path)  # type: ignore  # checked in __post_init__
         if not match:
-            return RouteMatch(target=self.target)
+            return RouteMatch(False, False)
 
-        path_params = {
+        cdef bint method_ = not self.methods or method in self.methods
+        cdef dict path_params = {
             key: self.params.get(key, INDENTITY)(unquote(value))
             for key, value in match.groupdict().items()
         }
 
-        return RouteMatch(
-            bool(match), not self.methods or method in self.methods,
-            self.target, path_params
-        )
+        return RouteMatch(True, method_, self.target, path_params)
 
 
 cdef class Mount(BaseRoute):
     """Support for nested routers."""
 
-    def __init__(self, path: str, methods: t.Sequence[str] = None, router: Router = None):
+    def __init__(self, str path, set methods=None, Router router=None):
         """Validate self prefix."""
         self.router = router or Router()
         self.route = self.router.route
@@ -103,14 +95,13 @@ cdef class Mount(BaseRoute):
 
         super(Mount, self).__init__(path.rstrip('/'), methods)
 
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
+    cpdef RouteMatch match(self, str path, str method):
         """Is the route match the path."""
         if not path.startswith(self.path):
-            return RouteMatch(False)
+            return RouteMatch(False, False)
 
         try:
-            cb, opts = self.router(path[len(self.path):], method=method)
-            return RouteMatch(True, True, cb, opts)
+            return self.router(path[len(self.path):], method=method)
 
         except self.router.NotFound:
-            return RouteMatch(False)
+            return RouteMatch(False, False)

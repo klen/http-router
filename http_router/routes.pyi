@@ -1,5 +1,4 @@
 import typing as t
-from collections.abc import Iterator
 
 from .router import Router
 
@@ -7,23 +6,14 @@ from .router import Router
 class RouteMatch:
     """Keeping route matching data."""
 
-    path: bool
-    method: bool
     target: t.Any
     path_params: t.Mapping[str, t.Any]
 
-    def __init__(self, path: bool = False, method: bool = False,
+    def __init__(self, path: bool, method: bool,
                  target: t.Any = None, path_params: t.Mapping[str, t.Any] = None):
-
         ...
 
     def __bool__(self) -> bool:
-        ...
-
-    def __iter__(self) -> Iterator:
-        ...
-
-    def __str__(self) -> str:
         ...
 
 
@@ -32,13 +22,13 @@ class BaseRoute:
     path: str
     methods: t.Set[str]
 
-    def __init__(self, path: str, methods: t.Sequence[str] = None):
+    def __init__(self, path: str, methods: t.Set[str]):
         ...
 
     def __lt__(self, route: BaseRoute) -> bool:  # noqa
         ...
 
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
+    def match(self, path: str, method: str) -> RouteMatch:
         ...
 
 
@@ -47,11 +37,7 @@ class Route(BaseRoute):
 
     target: t.Any
 
-    def __init__(self, path: str, methods: t.Sequence[str] = None, target: t.Any = None):
-        ...
-
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
-        """Is the route match the path."""
+    def __init__(self, path: str, methods: t.Set[str], target: t.Any = None):
         ...
 
 
@@ -61,11 +47,8 @@ class DynamicRoute(Route):
     pattern: t.Pattern
     params: t.Dict
 
-    def __init__(self, path: t.Union[str, t.Pattern], methods: t.Sequence[str] = None,
+    def __init__(self, path: t.Union[str, t.Pattern], methods: t.Set[str],
                  target: t.Any = None, pattern: t.Pattern = None, params: t.Dict = None):
-        ...
-
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
         ...
 
 
@@ -75,10 +58,6 @@ class Mount(BaseRoute):
     router: Router
     route: t.Callable
 
-    def __init__(self, path: str, methods: t.Sequence[str] = None, router: Router = None):
+    def __init__(self, path: str, methods: t.Set[str] = None, router: Router = None):
         """Validate self prefix."""
-        ...
-
-    def match(self, path: str, method: str = 'GET') -> RouteMatch:
-        """Is the route match the path."""
         ...
