@@ -9,7 +9,7 @@ import pytest
 
 @pytest.fixture
 def router():
-    from http_router import Router, NotFound, MethodNotAllowed, RouterError
+    from http_router import Router, NotFound, MethodNotAllowed, RouterError  # noqa
 
     return Router()
 
@@ -328,6 +328,33 @@ def test_method_shortcuts(router):
     for route in router.routes():
         method = route.target
         assert route.methods == {method}
+
+
+def test_benchmark(router, benchmark):
+    import random
+    import string
+
+    CHARS = string.ascii_letters + string.digits
+    RANDOM = lambda: ''.join(random.choices(CHARS, k=10))  # noqa
+
+    routes = [f"/{ RANDOM() }/{ RANDOM() }" for _ in range(100)]
+    routes += [f"/{ RANDOM() }/{{item}}/{ RANDOM() }" for _ in range(100)]
+    random.shuffle(routes)
+
+    paths = []
+    for route in routes:
+        router.route(route)('OK')
+        paths.append(route.format(item=RANDOM()))
+
+    paths = [route.format(item=RANDOM()) for route in routes]
+
+    def do_work():
+        for path in paths:
+            match = router(path)
+            assert match
+            assert match.target == 'OK'
+
+    benchmark.pedantic(do_work, iterations=10, rounds=100)
 
 
 #  pylama:ignore=D
