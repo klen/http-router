@@ -35,7 +35,7 @@ major:
 .PHONY: clean
 # target: clean - Display callable targets
 clean:
-	rm -rf build/ dist/ docs/_build *.egg-info
+	rm -rf build/ dist/ docs/_build *.egg-info http_router/*.c http_router/*.so
 	find $(CURDIR) -name "*.py[co]" -delete
 	find $(CURDIR) -name "*.orig" -delete
 	find $(CURDIR)/$(MODULE) -name "__pycache__" | xargs rm -rf
@@ -52,7 +52,7 @@ upload: clean $(VIRTUAL_ENV)
 	@twine upload dist/*
 
 
-test t: $(VIRTUAL_ENV)
+test t: $(VIRTUAL_ENV) clean
 	$(VIRTUAL_ENV)/bin/pytest tests.py
 
 

@@ -6,7 +6,7 @@ from functools import partial
 
 from . import NotFound, RouterError, MethodNotAllowed  # noqa
 from .utils import parse_path
-from ._types import CBV, CB, TYPE_METHODS, TYPE_PATH
+from .typing import CBV, CB, TYPE_METHODS, TYPE_PATH
 
 
 class Router:
