@@ -1,4 +1,5 @@
 VIRTUAL_ENV 	?= env
+PACKAGE 	?= http_router
 
 all: $(VIRTUAL_ENV)
 
@@ -52,7 +53,7 @@ upload: clean $(VIRTUAL_ENV)
 	@twine upload dist/*
 
 
-test t: $(VIRTUAL_ENV) clean
+test t: $(VIRTUAL_ENV) compile
 	$(VIRTUAL_ENV)/bin/pytest tests.py
 
 
@@ -63,6 +64,8 @@ mypy: $(VIRTUAL_ENV)
 example: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/python example.py
 
-cython: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/cython http_router/router.pyx
-	$(VIRTUAL_ENV)/bin/cython http_router/routes.pyx
+$(PACKAGE)/%.c: http_router/%.pyx http_router/%.pxd
+	$(VIRTUAL_ENV)/bin/cython $<
+
+compile: $(PACKAGE)/router.c $(PACKAGE)/routes.c
+	$(VIRTUAL_ENV)/bin/python setup.py build_ext --inplace

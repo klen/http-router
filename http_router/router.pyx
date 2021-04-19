@@ -1,5 +1,3 @@
-# cython: language_level=3
-
 import typing as t
 from collections import defaultdict
 from functools import partial
@@ -9,7 +7,7 @@ from .utils import parse_path
 from .typing import CBV, CB, TYPE_METHODS, TYPE_PATH
 
 
-class Router:
+cdef class Router:
     """Route HTTP queries."""
 
     NotFound: t.ClassVar[t.Type[Exception]] = NotFound                  # noqa
@@ -20,8 +18,8 @@ class Router:
         """Initialize the router."""
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
-        self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
-        self.dynamic: t.List[BaseRoute] = list()
+        self.plain: t.Dict[str, t.List[BaseRoute]] = {}
+        self.dynamic: t.List[BaseRoute] = []
 
     def __call__(self, path: str, method: str = "GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
@@ -48,6 +46,10 @@ class Router:
         root.dynamic.insert(0, route)
         return self
 
+    def __getattr__(self, method: str) -> t.Callable:
+        """Shortcut to the router methods."""
+        return partial(self.route, methods=method)
+
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         """Bind a target to self."""
         if opts:
@@ -72,6 +74,7 @@ class Router:
 
             else:
                 route = Route(path, methods, target)
+                self.plain.setdefault(path, [])
                 self.plain[path].append(route)
 
             routes.append(route)
@@ -79,7 +82,7 @@ class Router:
         return routes
 
     def route(self, path: t.Union[CB, TYPE_PATH], *paths: TYPE_PATH,
-              methods: TYPE_METHODS = None, **opts) -> t.Callable:
+              methods: TYPE_METHODS = None, **opts) -> t.Any:
         """Register a route."""
 
         def wrapper(target: CB) -> CB:
@@ -107,10 +110,6 @@ class Router:
     def routes(self) -> t.List['BaseRoute']:
         """Get a list of self routes."""
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
-
-    def __getattr__(self, method: str) -> t.Callable:
-        """Shortcut to the router methods."""
-        return partial(self.route, methods=method)
 
 
 from .routes import BaseRoute, RouteMatch, Route, DynamicRoute, Mount  # noqa
