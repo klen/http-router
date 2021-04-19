@@ -1,8 +1,8 @@
-from __future__ import annotations
+# cython: language_level=3
 
 import typing as t
 from collections import defaultdict
-from functools import partial, lru_cache
+from functools import partial
 
 from . import NotFound, RouterError, MethodNotAllowed  # noqa
 from .utils import parse_path
@@ -23,8 +23,7 @@ class Router:
         self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
         self.dynamic: t.List[BaseRoute] = list()
 
-    @lru_cache(maxsize=1024)
-    def __call__(self, path: str, method: str = "GET") -> RouteMatch:
+    def __call__(self, path: str, method: str = "GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
@@ -42,7 +41,7 @@ class Router:
 
         raise self.NotFound(path, method)
 
-    def __route__(self, root: Router, prefix: str, *paths: t.Any,
+    def __route__(self, root: 'Router', prefix: str, *paths: t.Any,
                   methods: TYPE_METHODS = None, **params):
         """Bind self as a nested router."""
         route = Mount(prefix, router=self)
@@ -67,8 +66,8 @@ class Router:
             path, pattern, params = parse_path(path)
 
             if pattern:
-                route: Route = DynamicRoute(path=path, methods=methods,
-                                            target=target, pattern=pattern, params=params)
+                route: Route = DynamicRoute(
+                    path, methods=methods, target=target, pattern=pattern, params=params)
                 self.dynamic.append(route)
 
             else:
@@ -105,7 +104,7 @@ class Router:
 
         return wrapper
 
-    def routes(self) -> t.List[BaseRoute]:
+    def routes(self) -> t.List['BaseRoute']:
         """Get a list of self routes."""
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
