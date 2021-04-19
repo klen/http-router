@@ -2,7 +2,7 @@ import re
 import typing as t
 from uuid import UUID
 
-from ._types import TYPE_PATH
+from .typing import TYPE_PATH
 
 
 INDENTITY = lambda v: v  # noqa
