@@ -1,5 +1,6 @@
 import typing as t
 from urllib.parse import unquote
+from collections.abc import Iterator
 
 from .router import Router
 from .utils import parse_path, INDENTITY
@@ -16,13 +17,13 @@ cdef class RouteMatch:
         self.target = target
         self.path_params = path_params
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self.path and self.method
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         return iter((self.target, self.path_params))
 
-    def __str__(self):
+    def __str__(self) -> str:
         status = self.path and 200 or self.method and 404 or 405
         return f"RouteMatch {status} ({self.target}, {self.path_params!r})"
 
@@ -33,7 +34,7 @@ cdef class BaseRoute:
         self.path = path
         self.methods = set(methods or set())
 
-    def __lt__(self, route: 'BaseRoute'):
+    def __lt__(self, route: 'BaseRoute') -> bool:
         assert isinstance(route, BaseRoute), 'Only routes are supported'
         return self.path < route.path
 
