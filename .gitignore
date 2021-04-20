@@ -2,4 +2,7 @@
 /build
 /dist
 /env
-/benchmark.py
+/.benchmarks
+*.html
+*.so
+*.c
