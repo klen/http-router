@@ -13,8 +13,6 @@ EXT_MODULES = [] if NO_EXTENSIONS else [
     Extension("http_router.router", ["http_router/router.c"], extra_compile_args=['-O2']),
     Extension("http_router.routes", ["http_router/routes.c"], extra_compile_args=['-O2']),
 ]
-print(NO_EXTENSIONS)
-print(EXT_MODULES)
 
 setup(
     setup_requires=["wheel"],
