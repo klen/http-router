@@ -52,8 +52,9 @@ upload: clean $(VIRTUAL_ENV)
 	@twine upload dist/*
 
 
+LATEST_BENCHMARK = $(shell ls -t .benchmarks/* | head -1 | head -c4)
 test t: $(VIRTUAL_ENV) clean
-	$(VIRTUAL_ENV)/bin/pytest tests.py
+	$(VIRTUAL_ENV)/bin/pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
 
 
 mypy: $(VIRTUAL_ENV)
