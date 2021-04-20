@@ -18,6 +18,7 @@ class Router:
 
     def __init__(self, trim_last_slash: bool = False, validator: CBV = None):
         """Initialize the router."""
+        print("START FROM PYTHON")
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
         self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
