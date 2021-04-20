@@ -28,8 +28,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Build cython
+    - name: Compile cython files
       run: |
+        pip install cython --install-option="--no-cython-compile"
         cython http_router/router.pyx
         cython http_router/routes.pyx
 
