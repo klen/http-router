@@ -36,7 +36,7 @@ major:
 .PHONY: clean
 # target: clean - Display callable targets
 clean:
-	rm -rf build/ dist/ docs/_build *.egg-info http_router/*.c http_router/*.so
+	rm -rf build/ dist/ docs/_build *.egg-info http_router/*.c http_router/*.so http_router/*.html
 	find $(CURDIR) -name "*.py[co]" -delete
 	find $(CURDIR) -name "*.orig" -delete
 	find $(CURDIR)/$(MODULE) -name "__pycache__" | xargs rm -rf
