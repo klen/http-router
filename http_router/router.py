@@ -23,24 +23,19 @@ class Router:
         self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
         self.dynamic: t.List[BaseRoute] = list()
 
-    @lru_cache(maxsize=1024)
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
 
-        methods: t.Set = set()
-        for route in self.plain.get(path, self.dynamic):
-            match = route.match(path, method)
-            if match.path:
-                if match.method:
-                    return match
-                methods |= route.methods
+        match = self.match(path, method)
+        if not match.path:
+            raise self.NotFound(path, method)
 
-        if methods:
-            raise self.MethodNotAllowed(path, method, methods)
+        if not match.method:
+            raise self.MethodNotAllowed(path, method)
 
-        raise self.NotFound(path, method)
+        return match
 
     def __route__(self, root: Router, prefix: str, *paths: t.Any,
                   methods: TYPE_METHODS = None, **params):
@@ -48,6 +43,19 @@ class Router:
         route = Mount(prefix, router=self)
         root.dynamic.insert(0, route)
         return self
+
+    @lru_cache(maxsize=1024)
+    def match(self, path: str, method: str) -> RouteMatch:
+        """Search a matched target for the given path and method."""
+        neighbour = None
+        for route in self.plain.get(path, self.dynamic):
+            match = route.match(path, method)
+            if match.path:
+                if match.method:
+                    return match
+                neighbour = match
+
+        return RouteMatch(False, False) if neighbour is None else neighbour
 
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         """Bind a target to self."""
@@ -57,7 +65,9 @@ class Router:
         if isinstance(methods, str):
             methods = [methods]
 
-        methods = set(m.upper() for m in methods or [])
+        if methods is not None:
+            methods = set(m.upper() for m in methods or [])
+
         routes = []
 
         for path in paths:
@@ -67,8 +77,8 @@ class Router:
             path, pattern, params = parse_path(path)
 
             if pattern:
-                route: Route = DynamicRoute(path=path, methods=methods,
-                                            target=target, pattern=pattern, params=params)
+                route: Route = DynamicRoute(
+                    path, methods=methods, target=target, pattern=pattern, params=params)
                 self.dynamic.append(route)
 
             else:
