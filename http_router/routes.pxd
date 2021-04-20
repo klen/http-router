@@ -6,7 +6,7 @@ from .router cimport Router
 
 cdef class RouteMatch:
 
-    cdef bint path, method
+    cdef readonly bint path, method
     cdef readonly object target
     cdef readonly dict params
 

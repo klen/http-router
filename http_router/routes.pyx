@@ -100,8 +100,4 @@ cdef class Mount(BaseRoute):
         if not path.startswith(self.path):
             return RouteMatch(False, False)
 
-        try:
-            return self.router(path[len(self.path):], method=method)
-
-        except self.router.NotFound:
-            return RouteMatch(False, False)
+        return self.router.match(path[len(self.path):], method)

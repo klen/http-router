@@ -1,6 +1,6 @@
 import typing as t
 from collections import defaultdict
-from functools import partial
+from functools import partial, lru_cache
 
 from . import NotFound, RouterError, MethodNotAllowed  # noqa
 from .utils import parse_path
@@ -26,22 +26,15 @@ cdef class Router:
         if self.trim_last_slash:
             path = path.rstrip('/') or '/'
 
-        cdef list routes = self.plain.get(path, self.dynamic)
-        cdef bint methods = False
-        cdef RouteMatch match
-        cdef BaseRoute route
+        match = self.match(path, method)
 
-        for route in routes:
-            match = route.match(path, method)
-            if match.path:
-                if match.method:
-                    return match
-                methods = True
+        if not match.path:
+            raise self.NotFound(path, method)
 
-        if methods:
+        if not match.method:
             raise self.MethodNotAllowed(path, method)
 
-        raise self.NotFound(path, method)
+        return match
 
     def __route__(self, root: 'Router', prefix: str, *paths: t.Any,
                   methods: TYPE_METHODS = None, **params):
@@ -53,6 +46,23 @@ cdef class Router:
     def __getattr__(self, method: str) -> t.Callable:
         """Shortcut to the router methods."""
         return partial(self.route, methods=method)
+
+    @lru_cache(maxsize=1024)
+    def match(self, str path, str method) -> 'RouteMatch':
+        """Search a matched target for the given path and method."""
+        cdef list routes = self.plain.get(path, self.dynamic)
+        cdef RouteMatch match, neighbor
+        cdef BaseRoute route
+
+        neighbor = RouteMatch(False, False)
+        for route in routes:
+            match = route.match(path, method)
+            if match.path:
+                neighbor = match
+                if match.method:
+                    return match
+
+        return neighbor
 
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         """Bind a target to self."""

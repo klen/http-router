@@ -204,7 +204,7 @@ def test_mounts():
     assert not match
 
     route.route('/e1')('e1')
-    match = route.match('/api/e1', '')
+    match = route.match('/api/e1', 'GET')
     assert match
     assert match.target == 'e1'
 
@@ -339,7 +339,7 @@ def test_benchmark(router, benchmark):
     METHODS = ['GET', 'POST']
 
     routes = [f"/{ RANDOM() }/{ RANDOM() }" for _ in range(100)]
-    routes += [f"/{ RANDOM() }/{{item}}/{ RANDOM() }" for _ in range(200)]
+    routes += [f"/{ RANDOM() }/{{item}}/{ RANDOM() }" for _ in range(100)]
     random.shuffle(routes)
 
     paths = []
