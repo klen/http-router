@@ -1,9 +1,9 @@
+/.benchmarks
 /.ignore
-/benchmark.py
 /build
 /dist
 /env
 /http_router/*.c
-/http_router/*.so
 /http_router/*.html
+/http_router/*.so
 /todo.txt

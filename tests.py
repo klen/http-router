@@ -336,23 +336,25 @@ def test_benchmark(router, benchmark):
 
     CHARS = string.ascii_letters + string.digits
     RANDOM = lambda: ''.join(random.choices(CHARS, k=10))  # noqa
+    METHODS = ['GET', 'POST']
 
     routes = [f"/{ RANDOM() }/{ RANDOM() }" for _ in range(100)]
-    routes += [f"/{ RANDOM() }/{{item}}/{ RANDOM() }" for _ in range(100)]
+    routes += [f"/{ RANDOM() }/{{item}}/{ RANDOM() }" for _ in range(200)]
     random.shuffle(routes)
 
     paths = []
     for route in routes:
-        router.route(route)('OK')
+        router.route(route, methods=random.choice(METHODS))('OK')
         paths.append(route.format(item=RANDOM()))
 
     paths = [route.format(item=RANDOM()) for route in routes]
 
     def do_work():
         for path in paths:
-            match = router(path)
-            assert match
-            assert match.target == 'OK'
+            try:
+                assert router(path)
+            except router.MethodNotAllowed:
+                pass
 
     benchmark.pedantic(do_work, iterations=10, rounds=100)
 
