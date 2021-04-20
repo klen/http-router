@@ -11,8 +11,7 @@ on:
     branches: [master, develop, feature/**]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -37,6 +36,10 @@ jobs:
 
     - name: Setup requirements
       run: pip install .[tests]
+
+    - name: Check typing
+      run: mypy http_router
+      if: ${{ matrix.python-version }} != 'pypy-3.7'
 
     - name: Test with pytest
       run: pytest tests.py
