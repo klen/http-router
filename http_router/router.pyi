@@ -23,6 +23,9 @@ class Router:
     def __getattr__(self, method: str) -> t.Callable:
         ...
 
+    def match(self, path: str, method: str) -> RouteMatch:
+        ...
+
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         ...
 

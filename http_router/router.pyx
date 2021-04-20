@@ -24,7 +24,7 @@ cdef class Router:
     def __call__(self, str path, str method = "GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
         if self.trim_last_slash:
-            path = path.rstrip('/') or '/'
+            path = path.rstrip('/')
 
         match = self.match(path, method)
 
@@ -51,16 +51,15 @@ cdef class Router:
     def match(self, str path, str method) -> 'RouteMatch':
         """Search a matched target for the given path and method."""
         cdef list routes = self.plain.get(path, self.dynamic)
-        cdef RouteMatch match, neighbor
+        cdef RouteMatch match, neighbor = RouteMatch(False, False)
         cdef BaseRoute route
 
-        neighbor = RouteMatch(False, False)
         for route in routes:
             match = route.match(path, method)
             if match.path:
-                neighbor = match
                 if match.method:
                     return match
+                neighbor = match
 
         return neighbor
 
@@ -72,12 +71,13 @@ cdef class Router:
         if isinstance(methods, str):
             methods = [methods]
 
-        methods = set(m.upper() for m in methods or [])
-        routes = []
+        if methods:
+            methods = set(m.upper() for m in methods or [])
 
+        routes = []
         for path in paths:
             if self.trim_last_slash and isinstance(path, str):
-                path = path.rstrip('/') or '/'
+                path = path.rstrip('/')
 
             path, pattern, params = parse_path(path)
 

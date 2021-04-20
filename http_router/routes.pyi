@@ -6,6 +6,8 @@ from .router import Router
 class RouteMatch:
     """Keeping route matching data."""
 
+    path: bool
+    method: bool
     target: t.Any
     path_params: t.Mapping[str, t.Any]
 
@@ -20,7 +22,7 @@ class RouteMatch:
 class BaseRoute:
 
     path: str
-    methods: t.Set[str]
+    methods: t.Optional[t.Set[str]]
 
     def __init__(self, path: str, methods: t.Set[str]):
         ...

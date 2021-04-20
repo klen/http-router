@@ -191,7 +191,7 @@ def test_router():
     assert match.target() == {'var': 'value'}
 
     assert router.routes()
-    assert router.routes()[0].path == '/'
+    assert router.routes()[0].path == ''
 
 
 def test_mounts():
