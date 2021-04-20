@@ -8,7 +8,7 @@ on:
     branches: [master, develop]
 
   push:
-    branches: [master, develop]
+    branches: [master, develop, feature/**]
 
 jobs:
   build:
