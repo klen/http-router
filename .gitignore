@@ -5,4 +5,5 @@
 /env
 /http_router/*.html
 /http_router/*.so
+/http_router/*.c
 /todo.txt
