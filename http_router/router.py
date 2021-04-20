@@ -26,7 +26,7 @@ class Router:
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
         if self.trim_last_slash:
-            path = path.rstrip('/') or '/'
+            path = path.rstrip('/')
 
         match = self.match(path, method)
         if not match.path:
@@ -72,7 +72,7 @@ class Router:
 
         for path in paths:
             if self.trim_last_slash and isinstance(path, str):
-                path = path.rstrip('/') or '/'
+                path = path.rstrip('/')
 
             path, pattern, params = parse_path(path)
 
