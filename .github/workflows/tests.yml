@@ -33,14 +33,14 @@ jobs:
         cython http_router/router.pyx
         cython http_router/routes.pyx
         python setup.py build_ext --inplace
-      if: ${{ matrix.python-version }} != 'pypy-3.7'
+      if: ${{ matrix.python-version != 'pypy-3.7' }}
 
     - name: Setup requirements
       run: pip install .[tests]
 
     - name: Check typing
       run: mypy http_router
-      if: ${{ matrix.python-version }} != 'pypy-3.7'
+      if: ${{ matrix.python-version != 'pypy-3.7' }}
 
     - name: Test with pytest
       run: pytest tests.py
