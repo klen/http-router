@@ -20,9 +20,6 @@ jobs:
       with:
         fetch-depth: 5
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-
     - name: Cythonize the package
       run: |
         pip install cython --install-option="--no-cython-compile"
