@@ -8,6 +8,33 @@ on:
 
 jobs:
 
+  # We have to repeat https://github.com/actions/toolkit/issues/501
+  cythonize:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 5
+
+    - uses: actions/cache@v2.1.5
+      id: cache-c
+      with:
+        path: http_router/*.c
+        key: ${{ hashFiles('http_router/router.pyx', 'http_router/routes.pyx') }}
+
+    - name: Cythonize the package
+      run: |
+        pip install cython --install-option="--no-cython-compile"
+        cython http_router/router.pyx
+        cython http_router/routes.pyx
+      if: steps.cache-c.outputs.cache-hit != 'true'
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: http_router
+        path: http_router/*.c
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -22,7 +49,6 @@ jobs:
       with:
         fetch-depth: 5
 
-    # Download c files
     - uses: actions/download-artifact@v2
       with:
         name: http_router
