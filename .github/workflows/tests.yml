@@ -31,6 +31,7 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
+        name: http_router
         path: http_router/*.c
 
   tests:
@@ -47,8 +48,8 @@ jobs:
         fetch-depth: 5
 
     - uses: actions/download-artifact@v2
-      id: download
-    - run: mv ${{steps.download.outputs.download-path}}/*.c http_router/.
+      # name: http_router
+    # - run: mv ${{steps.download.outputs.download-path}}/artifact/*.c http_router/.
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
