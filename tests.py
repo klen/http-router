@@ -103,28 +103,28 @@ def test_parse_path():
 def test_route():
     from http_router.routes import Route
 
-    route = Route('/only-post', ['POST'])
+    route = Route('/only-post', {'POST'}, None)
     assert route.methods
     assert route.match('/only-post', 'POST')
     assert not route.match('/only-post', '')
 
-    route = Route('/only-post')
+    route = Route('/only-post', set(), None)
     assert not route.methods
 
 
 def test_dynamic_route():
     from http_router.routes import DynamicRoute
 
-    route = DynamicRoute(r'/order/{id:int}')
+    route = DynamicRoute(r'/order/{id:int}', set(), None)
     match = route.match('/order/100', '')
-    assert match.path
+    assert match
     assert match.params == {'id': 100}
 
     match = route.match('/order/unknown', '')
     assert not match
     assert not match.params
 
-    route = DynamicRoute(re('/regex(/opt)?'))
+    route = DynamicRoute(re('/regex(/opt)?'), set(), None)
     match = route.match('/regex', '')
     assert match
 
@@ -198,7 +198,7 @@ def test_mounts():
     from http_router import Router
     from http_router.routes import Mount
 
-    route = Mount('/api/')
+    route = Mount('/api/', set())
     assert route.path == '/api'
     match = route.match('/api/e1', '')
     assert not match

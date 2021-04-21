@@ -1,4 +1,5 @@
 VIRTUAL_ENV 	?= env
+PACKAGE 	?= http_router
 
 all: $(VIRTUAL_ENV)
 
@@ -31,11 +32,10 @@ patch:
 major:
 	make version VERSION=major
 
-
 .PHONY: clean
 # target: clean - Display callable targets
 clean:
-	rm -rf build/ dist/ docs/_build *.egg-info http_router/*.c http_router/*.so
+	rm -rf build/ dist/ docs/_build *.egg-info $(PACKAGE)/*.c $(PACKAGE)/*.so $(PACKAGE)/*.html
 	find $(CURDIR) -name "*.py[co]" -delete
 	find $(CURDIR) -name "*.orig" -delete
 	find $(CURDIR)/$(MODULE) -name "__pycache__" | xargs rm -rf
@@ -51,19 +51,15 @@ upload: clean $(VIRTUAL_ENV)
 	@python setup.py bdist_wheel
 	@twine upload dist/*
 
-
 LATEST_BENCHMARK = $(shell ls -t .benchmarks/* | head -1 | head -c4)
-test t: $(VIRTUAL_ENV) clean
+test t: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
 
-
 mypy: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/mypy http_router
+	$(VIRTUAL_ENV)/bin/mypy $(PACKAGE)
 
+$(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
+	$(VIRTUAL_ENV)/bin/cython -a $<
 
-example: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/python example.py
-
-benchmark: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/python benchmark.py
-
+compile: $(PACKAGE)/router.c $(PACKAGE)/routes.c
+	$(VIRTUAL_ENV)/bin/python setup.py build_ext --inplace

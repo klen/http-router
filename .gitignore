@@ -1,8 +1,9 @@
+/.benchmarks
 /.ignore
 /build
 /dist
 /env
-/.benchmarks
-*.html
-*.so
-*.c
+/http_router/*.c
+/http_router/*.html
+/http_router/*.so
+/todo.txt
