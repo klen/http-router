@@ -47,7 +47,7 @@ register:
 
 .PHONY: upload
 # target: upload - Upload module on PyPi
-upload: clean $(VIRTUAL_ENV)
+upload: $(VIRTUAL_ENV) clean $(PACKAGE)/router.c $(PACKAGE)/routes.c
 	@python setup.py sdist
 	@twine upload dist/*
 
