@@ -27,7 +27,7 @@ jobs:
         cython http_router/router.pyx
         cython http_router/routes.pyx
 
-    - name: Build wheels (non-linux)
+    - name: Build wheels
       run: python3 setup.py bdist_wheel
 
     - name: Test wheels
