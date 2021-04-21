@@ -43,12 +43,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      id: download
       with:
         fetch-depth: 5
 
     - uses: actions/download-artifact@v2
-      with:
-        path: http_router/*.c
+    - run: mv ${{steps.download.outputs.download-path}}/*.c http_router/.
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
