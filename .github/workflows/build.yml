@@ -23,7 +23,7 @@ jobs:
 
     - name: Compile cython files
       run: |
-        pip install cython --install-option="--no-cython-compile"
+        pip3 install cython --install-option="--no-cython-compile"
         cython http_router/router.pyx
         cython http_router/routes.pyx
 
