@@ -67,7 +67,7 @@ class DynamicRoute(Route):
             path, pattern, params = parse_path(path)
             assert pattern, 'Invalid path'
         self.pattern = pattern
-        self.params = params
+        self.params = params or {}
         super(DynamicRoute, self).__init__(path, methods, target)
 
     def match(self, path: str, method: str) -> RouteMatch:

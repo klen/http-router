@@ -48,7 +48,7 @@ register:
 .PHONY: upload
 # target: upload - Upload module on PyPi
 upload: clean $(VIRTUAL_ENV)
-	@python setup.py bdist_wheel
+	@python setup.py sdist
 	@twine upload dist/*
 
 LATEST_BENCHMARK = $(shell ls -t .benchmarks/* | head -1 | head -c4)
