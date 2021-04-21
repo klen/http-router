@@ -24,7 +24,7 @@ jobs:
       id: cache-c
       with:
         path: http_router/*.c
-        key: ${{ hashFiles('http_router/router.pyx', 'http_router/routes.pyx') }}
+        key: ${{ hashFiles('http_router/router.pyx', 'http_router/routes.pyx', 'http_router/router.pxd', 'http_router/routes.pxd') }}
 
     - name: Cythonize the package
       run: |
