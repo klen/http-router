@@ -73,7 +73,8 @@ jobs:
       run: python setup.py bdist_wheel
 
     - name: Test wheels
-      if: !startsWith(matrix.os, 'windows')
+      if: |
+        !startsWith(matrix.os, 'windows')
       run: pip install --pre http_router -f "file:///${GITHUB_WORKSPACE}/dist"
 
     - uses: actions/upload-artifact@v1
