@@ -40,7 +40,6 @@ jobs:
     needs: cythonize
 
     strategy:
-      fail-fast: false
       max-parallel: 1
       matrix:
         python-version: [3.7, 3.8, 3.9]
@@ -52,8 +51,6 @@ jobs:
         fetch-depth: 5
 
     - uses: actions/download-artifact@v2
-      with:
-        name: http_router
 
     - name: Build package
       run: python3 setup.py sdist
