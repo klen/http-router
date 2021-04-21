@@ -1,4 +1,4 @@
-name: tests
+name: build
 
 on:
   workflow_run:
@@ -7,6 +7,8 @@ on:
     types: [completed]
 
 jobs:
+
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
