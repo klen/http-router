@@ -48,7 +48,7 @@ jobs:
 
     - uses: actions/download-artifact@v2
       with:
-        path: http_router
+        path: http_router/*.c
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
