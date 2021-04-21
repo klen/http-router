@@ -50,6 +50,8 @@ jobs:
         fetch-depth: 5
 
     - uses: actions/download-artifact@v2
+      with:
+        name: http_router
 
     - name: Build package
       run: python3 setup.py sdist
@@ -62,8 +64,6 @@ jobs:
       if: |
         !startsWith(matrix.os, 'windows')
       run: pip3 install --pre http_router -f "file:///${GITHUB_WORKSPACE}/dist"
-
-    - run: ls -la dist
 
     - uses: actions/upload-artifact@v2
       with:
