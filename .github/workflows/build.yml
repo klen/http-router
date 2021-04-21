@@ -40,7 +40,6 @@ jobs:
     needs: cythonize
 
     strategy:
-      max-parallel: 1
       matrix:
         python-version: [3.7, 3.8, 3.9]
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -64,7 +63,24 @@ jobs:
         !startsWith(matrix.os, 'windows')
       run: pip3 install --pre http_router -f "file:///${GITHUB_WORKSPACE}/dist"
 
-    - uses: actions/upload-artifact@v1
+    - run: ls -la dist
+
+    - uses: actions/upload-artifact@v2
       with:
         name: dist
         path: dist
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Download a distribution artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: dist
+          path: dist
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypy }}
