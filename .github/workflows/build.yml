@@ -28,12 +28,12 @@ jobs:
         cython http_router/routes.pyx
 
     - name: Build wheels (non-linux)
-      run: python setup.py bdist_wheel
+      run: python333 setup.py bdist_wheel
 
     - name: Test wheels
       if: |
         !startsWith(matrix.os, 'windows')
-      run: pip install --pre http_router -f "file:///${GITHUB_WORKSPACE}/dist"
+      run: pip3 install --pre http_router -f "file:///${GITHUB_WORKSPACE}/dist"
 
     - uses: actions/upload-artifact@v1
       with:
