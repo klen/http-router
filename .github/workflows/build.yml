@@ -28,7 +28,7 @@ jobs:
         cython http_router/routes.pyx
 
     - name: Build wheels (non-linux)
-      run: python333 setup.py bdist_wheel
+      run: python3 setup.py bdist_wheel
 
     - name: Test wheels
       if: |
