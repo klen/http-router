@@ -22,6 +22,9 @@ def test_router_basic(router):
     assert router.RouterError
     assert router.MethodNotAllowed
 
+    router.trim_last_slash = True
+    assert router.trim_last_slash
+
 
 def test_router_route_re(router):
     router.route(re('test.jpg'))('test1 passed')

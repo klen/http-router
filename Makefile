@@ -45,12 +45,6 @@ clean:
 register:
 	@python setup.py register
 
-.PHONY: upload
-# target: upload - Upload module on PyPi
-upload: $(VIRTUAL_ENV) clean $(PACKAGE)/router.c $(PACKAGE)/routes.c
-	@python setup.py sdist
-	@twine upload dist/*
-
 LATEST_BENCHMARK = $(shell ls -t .benchmarks/* | head -1 | head -c4)
 test t: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
