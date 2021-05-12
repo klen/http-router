@@ -67,7 +67,6 @@ class Router:
 
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         """Bind a target to self."""
-        target = self.converter(target)
         if opts:
             target = partial(target, **opts)
 
@@ -113,6 +112,7 @@ class Router:
             if not paths:
                 raise self.RouterError('Invalid route. A HTTP Path is required.')
 
+            target = self.converter(target)
             self.bind(target, *paths, methods=methods, **opts)
             return target
 
