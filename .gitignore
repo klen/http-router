@@ -1,5 +1,6 @@
 /.benchmarks
 /.ignore
+/.vimrc
 /build
 /dist
 /env

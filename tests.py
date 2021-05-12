@@ -251,7 +251,7 @@ def test_trim_last_slash():
     assert router('/route2').target == 'route2'
 
 
-def test_cb_validator():
+def test_validator():
     from http_router import Router
 
     # The router only accepts async functions
@@ -259,6 +259,17 @@ def test_cb_validator():
 
     with pytest.raises(router.RouterError):
         router.route('/', '/simple')(lambda: 'simple')
+
+
+def test_converter():
+    from http_router import Router
+
+    # The router only accepts async functions
+    router = Router(converter=lambda v: lambda r: (r, v))
+
+    router.route('/')('simple')
+    match = router('/')
+    assert match.target('test') == ('test', 'simple')
 
 
 def test_custom_route():
@@ -359,7 +370,4 @@ def test_benchmark(router, benchmark):
             except router.MethodNotAllowed:
                 pass
 
-    benchmark.pedantic(do_work, iterations=10, rounds=100)
-
-
-#  pylama:ignore=D
+    benchmark(do_work)

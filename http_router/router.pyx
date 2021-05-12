@@ -14,21 +14,22 @@ cdef class Router:
     RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
     MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
 
-    def __init__(self, bint trim_last_slash = False, validator: CBV = None):
+    def __init__(self, bint trim_last_slash=False, object validator=None, object converter=None):
         """Initialize the router."""
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
+        self.converter = converter or (lambda v: v)
         self.plain: t.Dict[str, t.List[BaseRoute]] = {}
         self.dynamic: t.List[BaseRoute] = []
 
-    def __call__(self, str path, str method = "GET") -> 'RouteMatch':
+    def __call__(self, str path, str method="GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
         if self.trim_last_slash:
             path = path.rstrip('/')
 
         match = self.match(path, method)
 
-        if not match.path:
+        if match is None:
             raise self.NotFound(path, method)
 
         if not match.method:
@@ -51,7 +52,7 @@ cdef class Router:
     def match(self, str path, str method) -> 'RouteMatch':
         """Search a matched target for the given path and method."""
         cdef list routes = self.plain.get(path, self.dynamic)
-        cdef RouteMatch match, neighbor = RouteMatch(False, False)
+        cdef RouteMatch match, neighbor = None
         cdef BaseRoute route
 
         for route in routes:
@@ -65,6 +66,7 @@ cdef class Router:
 
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         """Bind a target to self."""
+        target = self.converter(target)
         if opts:
             target = partial(target, **opts)
 

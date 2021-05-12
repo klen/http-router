@@ -3,7 +3,9 @@
 
 cdef class Router:
 
+    cdef readonly dict plain
+    cdef readonly list dynamic
+
     cdef public bint trim_last_slash
     cdef public object validator
-    cdef public dict plain
-    cdef public list dynamic
+    cdef public object converter

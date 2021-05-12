@@ -6,7 +6,7 @@ from functools import partial, lru_cache
 
 from . import NotFound, RouterError, MethodNotAllowed  # noqa
 from .utils import parse_path
-from .typing import CBV, CB, TYPE_METHODS, TYPE_PATH
+from .typing import CB, TYPE_METHODS, TYPE_PATH
 
 
 class Router:
@@ -16,10 +16,18 @@ class Router:
     RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
     MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
 
-    def __init__(self, trim_last_slash: bool = False, validator: CBV = None):
-        """Initialize the router."""
+    def __init__(self, trim_last_slash: bool = False,
+                 validator: t.Callable[[t.Any], bool] = None, converter: t.Callable = None):
+        """Initialize the router.
+
+        :param trim_last_slash: Ignore a last slash
+        :param validator: Validate objects to route
+        :param converter: Convert objects to route
+
+        """
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
+        self.converter = converter or (lambda v: v)
         self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
         self.dynamic: t.List[BaseRoute] = list()
 
@@ -59,6 +67,7 @@ class Router:
 
     def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
         """Bind a target to self."""
+        target = self.converter(target)
         if opts:
             target = partial(target, **opts)
 

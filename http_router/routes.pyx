@@ -42,7 +42,8 @@ cdef class Route(BaseRoute):
     cpdef RouteMatch match(self, str path, str method):
         """Is the route match the path."""
         cdef bint path_ = self.path == path
-        cdef bint method_ = not self.methods or method in self.methods
+        cdef set methods = self.methods
+        cdef bint method_ = not methods or method in methods
         if not (path_ and method_):
             return RouteMatch(path_, method_)
 

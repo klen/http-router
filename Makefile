@@ -50,5 +50,7 @@ mypy: $(VIRTUAL_ENV)
 $(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
 	$(VIRTUAL_ENV)/bin/cython -a $<
 
-compile: $(PACKAGE)/router.c $(PACKAGE)/routes.c
+cyt: $(PACKAGE)/router.c $(PACKAGE)/routes.c
+
+compile: cyt
 	$(VIRTUAL_ENV)/bin/python setup.py build_ext --inplace

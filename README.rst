@@ -23,12 +23,14 @@ HTTP Router
 
 .. contents::
 
+
 .. _requirements:
 
 Requirements
 =============
 
 - python >= 3.7
+
 
 .. _installation:
 
@@ -167,12 +169,14 @@ If you have any suggestions, bug reports or
 annoyances please report them to the issue tracker
 at https://github.com/klen/http-router/issues
 
+
 .. _contributing:
 
 Contributing
 ============
 
 Development of the project happens at: https://github.com/klen/http-router
+
 
 .. _license:
 
@@ -186,4 +190,3 @@ Licensed under a `MIT license`_.
 
 .. _klen: https://github.com/klen
 .. _MIT license: http://opensource.org/licenses/MIT
-
