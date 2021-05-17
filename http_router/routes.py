@@ -100,6 +100,7 @@ class Mount(PrefixedRoute):
         """Is the route match the path."""
         match: RouteMatch = super(Mount, self).match(path, method)
         if match:
-            return self.target(path[len(self.path):], method)
+            target = t.cast(t.Callable, self.target)
+            return target(path[len(self.path):], method)
 
         return match
