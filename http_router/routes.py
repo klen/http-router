@@ -20,40 +20,28 @@ class RouteMatch:
     def __bool__(self):
         return self.path and self.method
 
-
-class BaseRoute:
-
-    __slots__ = 'path', 'methods'
-
-    def __init__(self, path: str, methods: t.Set = None):
-        self.path = path
-        self.methods = methods
-
-    def __lt__(self, route: 'BaseRoute'):
-        assert isinstance(route, BaseRoute), 'Only routes are supported'
-        return self.path < route.path
-
-    def match(self, path: str, method: str) -> RouteMatch:
-        raise NotImplementedError
+    def __repr__(self):
+        return f"<RouteMatch path:{self.path} method:{self.method} - {self.target}>"
 
 
-class Route(BaseRoute):
+class Route:
     """Base plain route class."""
 
     __slots__ = 'path', 'methods', 'target'
 
     def __init__(self, path: str, methods: t.Set = None, target: t.Any = None):
-        super(Route, self).__init__(path, methods)
+        self.path = path
+        self.methods = methods
         self.target = target
+
+    def __lt__(self, route: 'Route'):
+        assert isinstance(route, Route), 'Only routes are supported'
+        return self.path < route.path
 
     def match(self, path: str, method: str) -> RouteMatch:
         """Is the route match the path."""
-        path_matched = path == self.path
-        method_matched = not self.methods or (method in self.methods)
-        if not path_matched and method_matched:
-            return RouteMatch(path_matched, method_matched)
-
-        return RouteMatch(path_matched, method_matched, self.target)
+        methods = self.methods
+        return RouteMatch(path == self.path, not methods or (method in methods), self.target)
 
 
 class DynamicRoute(Route):
@@ -83,28 +71,35 @@ class DynamicRoute(Route):
         )
 
 
-class Mount(BaseRoute):
-    """Support for nested routers."""
+class PrefixedRoute(Route):
+    """Match by a prefix."""
 
-    __slots__ = 'path', 'methods', 'router', 'route'
-
-    def __init__(self, path: str, methods: t.Set = None, router: Router = None):
-        """Validate self prefix."""
-        self.router = router or Router()
-        self.route = self.router.route
+    def __init__(self, path: str, methods: t.Set = None, target: t.Any = None):
         path, pattern, _ = parse_path(path)
         if pattern:
-            raise self.router.RouterError("Prefix doesn't support parameters")
+            assert not pattern, "Prefix doesn't support patterns."
 
-        if not path.startswith('/'):
-            raise self.router.RouterError("Prefix must start with /")
-
-        super(Mount, self).__init__(path.rstrip('/'), methods)
+        super(PrefixedRoute, self).__init__(path.rstrip('/'), methods, target)
 
     def match(self, path: str, method: str) -> RouteMatch:
         """Is the route match the path."""
-        if not path.startswith(self.path):
-            return RouteMatch(False, False)
+        methods = self.methods
+        return RouteMatch(
+            path.startswith(self.path), not methods or (method in methods), self.target)
 
-        path = path[len(self.path):]
-        return self.router.match(path, method)
+
+class Mount(PrefixedRoute):
+    """Support for nested routers."""
+
+    def __init__(self, path: str, methods: t.Set = None, router: Router = None):
+        """Validate self prefix."""
+        router = router or Router()
+        super(Mount, self).__init__(path, methods, router.match)
+
+    def match(self, path: str, method: str) -> RouteMatch:
+        """Is the route match the path."""
+        match: RouteMatch = super(Mount, self).match(path, method)
+        if match:
+            return self.target(path[len(self.path):], method)
+
+        return match

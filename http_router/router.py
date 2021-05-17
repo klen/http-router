@@ -28,8 +28,8 @@ class Router:
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
         self.converter = converter or (lambda v: v)
-        self.plain: t.DefaultDict[str, t.List[BaseRoute]] = defaultdict(list)
-        self.dynamic: t.List[BaseRoute] = list()
+        self.plain: t.DefaultDict[str, t.List[Route]] = defaultdict(list)
+        self.dynamic: t.List[Route] = list()
 
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
@@ -48,7 +48,7 @@ class Router:
     def __route__(self, root: Router, prefix: str, *paths: t.Any,
                   methods: TYPE_METHODS = None, **params):
         """Bind self as a nested router."""
-        route = Mount(prefix, router=self)
+        route = Mount(prefix, set(), router=self)
         root.dynamic.insert(0, route)
         return self
 
@@ -124,7 +124,7 @@ class Router:
 
         return wrapper
 
-    def routes(self) -> t.List[BaseRoute]:
+    def routes(self) -> t.List[Route]:
         """Get a list of self routes."""
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
@@ -133,6 +133,6 @@ class Router:
         return partial(self.route, methods=method)
 
 
-from .routes import BaseRoute, RouteMatch, Route, DynamicRoute, Mount  # noqa
+from .routes import RouteMatch, Route, DynamicRoute, Mount  # noqa
 
 # pylama: ignore=D

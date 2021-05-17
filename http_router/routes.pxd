@@ -10,16 +10,13 @@ cdef class RouteMatch:
     cdef readonly dict params
 
 
-cdef class BaseRoute:
+cdef class Route:
 
     cdef readonly str path
     cdef readonly set methods
+    cdef readonly object target
 
     cpdef RouteMatch match(self, str path, str method)
-
-cdef class Route(BaseRoute):
-
-    cdef readonly object target
 
 
 cdef class DynamicRoute(Route):
@@ -28,7 +25,11 @@ cdef class DynamicRoute(Route):
     cdef readonly dict params
 
 
-cdef class Mount(BaseRoute):
+cdef class PrefixedRoute(Route):
 
-    cdef readonly Router router
-    cdef readonly object route
+    pass
+
+
+cdef class Mount(PrefixedRoute):
+
+    pass

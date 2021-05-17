@@ -19,8 +19,8 @@ cdef class Router:
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
         self.converter = converter or (lambda v: v)
-        self.plain: t.Dict[str, t.List[BaseRoute]] = {}
-        self.dynamic: t.List[BaseRoute] = []
+        self.plain: t.Dict[str, t.List[Route]] = {}
+        self.dynamic: t.List[Route] = []
 
     def __call__(self, str path, str method="GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
@@ -40,7 +40,7 @@ cdef class Router:
     def __route__(self, root: 'Router', prefix: str, *paths: t.Any,
                   methods: TYPE_METHODS = None, **params):
         """Bind self as a nested router."""
-        route = Mount(prefix, router=self)
+        route = Mount(prefix, set(), router=self)
         root.dynamic.insert(0, route)
         return self
 
@@ -53,7 +53,7 @@ cdef class Router:
         """Search a matched target for the given path and method."""
         cdef list routes = self.plain.get(path, self.dynamic)
         cdef RouteMatch match, neighbor = None
-        cdef BaseRoute route
+        cdef Route route
 
         for route in routes:
             match = route.match(path, method)
@@ -123,11 +123,11 @@ cdef class Router:
 
         return wrapper
 
-    def routes(self) -> t.List['BaseRoute']:
+    def routes(self) -> t.List['Route']:
         """Get a list of self routes."""
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
 
-from .routes cimport BaseRoute, RouteMatch, Route, DynamicRoute, Mount  # noqa
+from .routes cimport RouteMatch, Route, DynamicRoute, Mount  # noqa
 
 # pylama: ignore=D

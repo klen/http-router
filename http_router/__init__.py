@@ -15,3 +15,4 @@ class MethodNotAllowed(RouterError):
 
 
 from .router import Router  # noqa
+from .routes import Route, DynamicRoute, PrefixedRoute, Mount  # noqa

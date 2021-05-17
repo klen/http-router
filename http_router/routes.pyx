@@ -19,25 +19,16 @@ cdef class RouteMatch:
         return self.path and self.method
 
 
-cdef class BaseRoute:
-
-    def __init__(self, str path, set methods):
-        self.path = path
-        self.methods = methods
-
-    def __lt__(self, BaseRoute route) -> bool:
-        return self.path < route.path
-
-    cpdef RouteMatch match(self, str path, str method):
-        raise NotImplementedError
-
-
-cdef class Route(BaseRoute):
+cdef class Route:
     """Base plain route class."""
 
     def __init__(self, str path, set methods, object target=None):
-        super(Route, self).__init__(path, methods)
+        self.path = path
+        self.methods = methods
         self.target = target
+
+    def __lt__(self, Route route) -> bool:
+        return self.path < route.path
 
     cpdef RouteMatch match(self, str path, str method):
         """Is the route match the path."""
@@ -80,25 +71,35 @@ cdef class DynamicRoute(Route):
         return RouteMatch(True, method_, self.target, path_params)
 
 
-cdef class Mount(BaseRoute):
-    """Support for nested routers."""
+cdef class PrefixedRoute(Route):
+    """Match by a prefix."""
 
-    def __init__(self, str path, set methods=None, Router router=None):
-        """Validate self prefix."""
-        self.router = router or Router()
-        self.route = self.router.route
+    def __init__(self, str path, set methods, object target=None):
         path, pattern, _ = parse_path(path)
         if pattern:
-            raise self.router.RouterError("Prefix doesn't support parameters")
+            assert not pattern, "Prefix doesn't support patterns."
 
-        if not path.startswith('/'):
-            raise self.router.RouterError("Prefix must start with /")
-
-        super(Mount, self).__init__(path.rstrip('/'), methods)
+        super(PrefixedRoute, self).__init__(path.rstrip('/'), methods, target)
 
     cpdef RouteMatch match(self, str path, str method):
         """Is the route match the path."""
-        if not path.startswith(self.path):
-            return RouteMatch(False, False)
+        cdef set methods = self.methods
+        return RouteMatch(
+            path.startswith(self.path), not methods or (method in methods), self.target)
 
-        return self.router.match(path[len(self.path):], method)
+
+cdef class Mount(PrefixedRoute):
+    """Support for nested routers."""
+
+    def __init__(self, str path, set methods, Router router=None):
+        """Validate self prefix."""
+        router = router or Router()
+        super(Mount, self).__init__(path, methods, router.match)
+
+    cpdef RouteMatch match(self, str path, str method):
+        """Is the route match the path."""
+        cdef RouteMatch match = super(Mount, self).match(path, method)
+        if match.path and match.method:
+            return self.target(path[len(self.path):], method)
+
+        return match

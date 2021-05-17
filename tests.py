@@ -201,12 +201,13 @@ def test_mounts():
     from http_router import Router
     from http_router.routes import Mount
 
-    route = Mount('/api/', set())
+    router = Router()
+    route = Mount('/api/', set(), router)
     assert route.path == '/api'
     match = route.match('/api/e1', '')
     assert not match
 
-    route.route('/e1')('e1')
+    router.route('/e1')('e1')
     match = route.match('/api/e1', 'UNKNOWN')
     assert match
     assert match.target == 'e1'
