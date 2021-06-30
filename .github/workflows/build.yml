@@ -44,6 +44,25 @@ jobs:
         name: dist
         path: dist
 
+  build_sdist:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 5
+
+    - name: Use Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+
+    - name: Build a package
+      run: python3 setup.py bdist_wheel
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        path: dist
+
   build:
     runs-on: ${{ matrix.os }}
     needs: cythonize
