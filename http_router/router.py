@@ -26,7 +26,7 @@ class Router:
 
         """
         self.trim_last_slash = trim_last_slash
-        self.validator = validator or (lambda v: True)
+        self.validator = validator or (lambda _: True)
         self.converter = converter or (lambda v: v)
         self.plain: t.DefaultDict[str, t.List[Route]] = defaultdict(list)
         self.dynamic: t.List[Route] = list()
@@ -45,8 +45,7 @@ class Router:
 
         return match
 
-    def __route__(self, root: Router, prefix: str, *paths: t.Any,
-                  methods: TYPE_METHODS = None, **params):
+    def __route__(self, root: Router, prefix: str, *_, **__):
         """Bind self as a nested router."""
         route = Mount(prefix, set(), router=self)
         root.dynamic.insert(0, route)

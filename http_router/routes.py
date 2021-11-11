@@ -52,7 +52,7 @@ class DynamicRoute(Route):
     def __init__(self, path: str, methods: t.Set = None, target: t.Any = None,
                  pattern: t.Pattern = None, params: t.Dict = None):
         if pattern is None:
-            path, pattern, params = parse_path(path)
+            path, pattern, params = parse_path(path)  # type: ignore
             assert pattern, 'Invalid path'
         self.pattern = pattern
         self.params = params or {}
