@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-import typing as t
 from collections import defaultdict
-from functools import partial, lru_cache
+from functools import lru_cache, partial
+from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, Union
 
-from . import NotFound, RouterError, MethodNotAllowed  # noqa
+from . import MethodNotAllowed, NotFound, RouterError  # noqa
+from .types import TMethodsArg, TPath, TVMatch
 from .utils import parse_path
-from .typing import CB, TYPE_METHODS, TYPE_PATH
 
 
 class Router:
     """Route HTTP queries."""
 
-    NotFound: t.ClassVar[t.Type[Exception]] = NotFound                  # noqa
-    RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
-    MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
+    NotFound: ClassVar[Type[Exception]] = NotFound  # noqa
+    RouterError: ClassVar[Type[Exception]] = RouterError  # noqa
+    MethodNotAllowed: ClassVar[Type[Exception]] = MethodNotAllowed  # noqa
 
-    def __init__(self, trim_last_slash: bool = False,
-                 validator: t.Callable[[t.Any], bool] = None, converter: t.Callable = None):
+    def __init__(
+        self,
+        trim_last_slash: bool = False,
+        validator: Optional[Callable[[Any], bool]] = None,
+        converter: Optional[Callable] = None,
+    ):
         """Initialize the router.
 
         :param trim_last_slash: Ignore a last slash
@@ -28,13 +32,13 @@ class Router:
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda _: True)
         self.converter = converter or (lambda v: v)
-        self.plain: t.DefaultDict[str, t.List[Route]] = defaultdict(list)
-        self.dynamic: t.List[Route] = list()
+        self.plain: DefaultDict[str, List[Route]] = defaultdict(list)
+        self.dynamic: List[Route] = list()
 
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
         if self.trim_last_slash:
-            path = path.rstrip('/')
+            path = path.rstrip("/")
 
         match = self.match(path, method)
         if not match.path:
@@ -64,7 +68,9 @@ class Router:
 
         return RouteMatch(False, False) if neighbour is None else neighbour
 
-    def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
+    def bind(
+        self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts
+    ):
         """Bind a target to self."""
         if opts:
             target = partial(target, **opts)
@@ -79,13 +85,14 @@ class Router:
 
         for path in paths:
             if self.trim_last_slash and isinstance(path, str):
-                path = path.rstrip('/')
+                path = path.rstrip("/")
 
             path, pattern, params = parse_path(path)
 
             if pattern:
                 route: Route = DynamicRoute(
-                    path, methods=methods, target=target, pattern=pattern, params=params)
+                    path, methods=methods, target=target, pattern=pattern, params=params
+                )
                 self.dynamic.append(route)
 
             else:
@@ -96,26 +103,31 @@ class Router:
 
         return routes
 
-    def route(self, path: t.Union[CB, TYPE_PATH], *paths: TYPE_PATH,
-              methods: TYPE_METHODS = None, **opts) -> t.Callable:
+    def route(
+        self,
+        path: Union[TVMatch, TPath],
+        *paths: TPath,
+        methods: Optional[TMethodsArg] = None,
+        **opts,
+    ) -> Callable:
         """Register a route."""
 
-        def wrapper(target: CB) -> CB:
-            if hasattr(target, '__route__'):
+        def wrapper(target: TVMatch) -> TVMatch:
+            if hasattr(target, "__route__"):
                 target.__route__(self, *paths, methods=methods, **opts)
                 return target
 
             if not self.validator(target):  # type: ignore
-                raise self.RouterError('Invalid target: %r' % target)
+                raise self.RouterError("Invalid target: %r" % target)
 
             if not paths:
-                raise self.RouterError('Invalid route. A HTTP Path is required.')
+                raise self.RouterError("Invalid route. A HTTP Path is required.")
 
             target = self.converter(target)
             self.bind(target, *paths, methods=methods, **opts)
             return target
 
-        if isinstance(path, TYPE_PATH.__args__):  # type: ignore
+        if isinstance(path, TPath.__args__):  # type: ignore
             paths = (path, *paths)
 
         else:
@@ -123,15 +135,17 @@ class Router:
 
         return wrapper
 
-    def routes(self) -> t.List[Route]:
+    def routes(self) -> List[Route]:
         """Get a list of self routes."""
-        return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
+        return sorted(
+            self.dynamic + [r for routes in self.plain.values() for r in routes]
+        )
 
-    def __getattr__(self, method: str) -> t.Callable:
+    def __getattr__(self, method: str) -> Callable:
         """Shortcut to the router methods."""
         return partial(self.route, methods=method)
 
 
-from .routes import RouteMatch, Route, DynamicRoute, Mount  # noqa
+from .routes import DynamicRoute, Mount, Route, RouteMatch  # noqa
 
 # pylama: ignore=D

@@ -1,6 +1,5 @@
-import typing as t
+from typing import Pattern, Union
 from urllib.parse import unquote
-from collections.abc import Iterator
 
 from .router import Router
 from .utils import parse_path, INDENTITY
@@ -44,8 +43,8 @@ cdef class Route:
 cdef class DynamicRoute(Route):
     """Base dynamic route class."""
 
-    def __init__(self, path: t.Union[str, t.Pattern], set methods,
-                 object target=None, pattern: t.Pattern = None, params: t.Dict = None):
+    def __init__(self, path: Union[str, Pattern], set methods,
+                 object target=None, pattern: Pattern = None, dict params = None):
 
         if pattern is None:
             path, pattern, params = parse_path(path)

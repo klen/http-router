@@ -1,4 +1,5 @@
 /.benchmarks
+/.eggs
 /.ignore
 /.vimrc
 /build

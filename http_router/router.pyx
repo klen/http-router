@@ -1,26 +1,31 @@
-import typing as t
 from collections import defaultdict
-from functools import partial, lru_cache
+from functools import lru_cache, partial
+from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, Union
 
-from . import NotFound, RouterError, MethodNotAllowed  # noqa
+from . import MethodNotAllowed, NotFound, RouterError  # noqa
+from .types import TMethodsArg, TPath, TVMatch
 from .utils import parse_path
-from .typing import CBV, CB, TYPE_METHODS, TYPE_PATH
 
 
 cdef class Router:
     """Route HTTP queries."""
 
-    NotFound: t.ClassVar[t.Type[Exception]] = NotFound                  # noqa
-    RouterError: t.ClassVar[t.Type[Exception]] = RouterError            # noqa
-    MethodNotAllowed: t.ClassVar[t.Type[Exception]] = MethodNotAllowed  # noqa
+    NotFound: ClassVar[Type[Exception]] = NotFound                  # noqa
+    RouterError: ClassVar[Type[Exception]] = RouterError            # noqa
+    MethodNotAllowed: ClassVar[Type[Exception]] = MethodNotAllowed  # noqa
 
-    def __init__(self, bint trim_last_slash=False, object validator=None, object converter=None):
+    def __init__(
+            self,
+            bint trim_last_slash=False,
+            object validator=None,
+            object converter=None
+    ):
         """Initialize the router."""
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda v: True)
         self.converter = converter or (lambda v: v)
-        self.plain: t.Dict[str, t.List[Route]] = {}
-        self.dynamic: t.List[Route] = []
+        self.plain: Dict[str, List[Route]] = {}
+        self.dynamic: List[Route] = []
 
     def __call__(self, str path, str method="GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
@@ -37,16 +42,12 @@ cdef class Router:
 
         return match
 
-    def __route__(self, root: 'Router', prefix: str, *paths: t.Any,
-                  methods: TYPE_METHODS = None, **params):
+    def __route__(self, root: 'Router', prefix: str, *paths: Any,
+                  methods: TMethodsArg = None, **params):
         """Bind self as a nested router."""
         route = Mount(prefix, set(), router=self)
         root.dynamic.insert(0, route)
         return self
-
-    def __getattr__(self, method: str) -> t.Callable:
-        """Shortcut to the router methods."""
-        return partial(self.route, methods=method)
 
     @lru_cache(maxsize=1024)
     def match(self, str path, str method) -> 'RouteMatch':
@@ -64,7 +65,7 @@ cdef class Router:
 
         return neighbor
 
-    def bind(self, target: t.Any, *paths: TYPE_PATH, methods: TYPE_METHODS = None, **opts):
+    def bind(self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts):
         """Bind a target to self."""
         if opts:
             target = partial(target, **opts)
@@ -96,11 +97,16 @@ cdef class Router:
 
         return routes
 
-    def route(self, path: t.Union[CB, TYPE_PATH], *paths: TYPE_PATH,
-              methods: TYPE_METHODS = None, **opts) -> t.Any:
+    def route(
+        self,
+        path: Union[TVMatch, TPath],
+        *paths: TPath,
+        methods: Optional[TMethodsArg] = None,
+        **opts
+    ) -> Callable:
         """Register a route."""
 
-        def wrapper(target: CB) -> CB:
+        def wrapper(target: TVMatch) -> TVMatch:
             if hasattr(target, '__route__'):
                 target.__route__(self, *paths, methods=methods, **opts)
                 return target
@@ -115,7 +121,7 @@ cdef class Router:
             self.bind(target, *paths, methods=methods, **opts)
             return target
 
-        if isinstance(path, TYPE_PATH.__args__):  # type: ignore
+        if isinstance(path, TPath.__args__):  # type: ignore
             paths = (path, *paths)
 
         else:
@@ -123,11 +129,15 @@ cdef class Router:
 
         return wrapper
 
-    def routes(self) -> t.List['Route']:
+    def routes(self) -> List['Route']:
         """Get a list of self routes."""
         return sorted(self.dynamic + [r for routes in self.plain.values() for r in routes])
 
+    def __getattr__(self, method: str) -> Callable:
+        """Shortcut to the router methods."""
+        return partial(self.route, methods=method)
 
-from .routes cimport RouteMatch, Route, DynamicRoute, Mount  # noqa
+
+from .routes cimport DynamicRoute, Mount, Route, RouteMatch  # noqa
 
 # pylama: ignore=D
