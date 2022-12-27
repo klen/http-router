@@ -54,6 +54,7 @@ jobs:
         - "cp38-*"
         - "cp39-*"
         - "cp310-*"
+        - "cp311-*"
         exclude:
         - os: ubuntu-latest
           cibw_arch: universal2
