@@ -96,7 +96,7 @@ jobs:
         name: http_router
         path: http_router
 
-    - uses: pypa/cibuildwheel@v2.1.1
+    - uses: pypa/cibuildwheel@main
       env:
         CIBW_BUILD_VERBOSITY: 1
         CIBW_BUILD: ${{ matrix.cibw_python }}
