@@ -99,7 +99,6 @@ cdef class Router:
 
     def route(
         self,
-        path: TPath,
         *paths: TPath,
         methods: Optional[TMethodsArg] = None,
         **opts
@@ -108,14 +107,14 @@ cdef class Router:
 
         def wrapper(target: TVObj) -> TVObj:
             if hasattr(target, '__route__'):
-                target.__route__(self, path, *paths, methods=methods, **opts)
+                target.__route__(self, *paths, methods=methods, **opts)
                 return target
 
             if not self.validator(target):  # type: ignore
                 raise self.RouterError('Invalid target: %r' % target)
 
             target = self.converter(target)
-            self.bind(target, path, *paths, methods=methods, **opts)
+            self.bind(target, *paths, methods=methods, **opts)
             return target
 
         return wrapper

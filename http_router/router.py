@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import lru_cache, partial
-from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, overload
+from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type
 
 from .exceptions import MethodNotAllowed, NotFound, RouterError  # noqa
 from .types import TMethodsArg, TPath, TVObj
@@ -109,7 +109,6 @@ class Router:
 
     def route(
         self,
-        path: TPath,
         *paths: TPath,
         methods: Optional[TMethodsArg] = None,
         **opts,
@@ -118,14 +117,14 @@ class Router:
 
         def wrapper(target: TVObj) -> TVObj:
             if hasattr(target, "__route__"):
-                target.__route__(self, path, *paths, methods=methods, **opts)
+                target.__route__(self, *paths, methods=methods, **opts)
                 return target
 
             if not self.validator(target):  # type: ignore
                 raise self.RouterError("Invalid target: %r" % target)
 
             target = self.converter(target)
-            self.bind(target, path, *paths, methods=methods, **opts)
+            self.bind(target, *paths, methods=methods, **opts)
             return target
 
         return wrapper

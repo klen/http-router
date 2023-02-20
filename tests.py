@@ -280,6 +280,9 @@ def test_converter():
 def test_custom_route():
     from http_router import Router
 
+    router = Router()
+
+    @router.route()
     class View:
 
         methods = "get", "post"
@@ -291,11 +294,8 @@ def test_custom_route():
 
         @classmethod
         def __route__(cls, router, *paths, **params):
-            return router.bind(cls, *paths, methods=cls.methods)
+            return router.bind(cls, "/", methods=cls.methods)
 
-    # The router only accepts async functions
-    router = Router()
-    router.route("/")(View)
     assert router.plain["/"][0].methods == {"GET", "POST"}
     match = router("/")
     assert match.target is View
