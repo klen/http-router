@@ -1,6 +1,6 @@
-from typing import Iterable, Pattern, TypeVar, Union
+from typing import Any, Iterable, Pattern, TypeVar, Union
 
 TMethods = Iterable[str]
 TMethodsArg = Union[TMethods, str]
 TPath = Union[str, Pattern]
-TVMatch = TypeVar("TVMatch")
+TVObj = TypeVar("TVObj", bound=Any)

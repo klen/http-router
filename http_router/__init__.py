@@ -2,25 +2,17 @@ __version__ = "2.6.8"
 __license__ = "MIT"
 
 
-class RouterError(Exception):
-    pass
-
-
-class NotFound(RouterError):
-    pass
-
-
-class MethodNotAllowed(RouterError):
-    pass
-
-
+from .exceptions import MethodNotAllowed, NotFound, RouterError
 from .router import Router
-from .routes import Route, DynamicRoute, PrefixedRoute, Mount
+from .routes import DynamicRoute, Mount, PrefixedRoute, Route
 
 __all__ = (
-    'DynamicRoute',
-    'Mount',
-    'PrefixedRoute',
-    'Route',
-    'Router',
+    "DynamicRoute",
+    "Mount",
+    "PrefixedRoute",
+    "Route",
+    "Router",
+    "MethodNotAllowed",
+    "NotFound",
+    "RouterError",
 )

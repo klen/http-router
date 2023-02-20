@@ -6,6 +6,8 @@ all: $(VIRTUAL_ENV)
 $(VIRTUAL_ENV): setup.cfg
 	@[ -d $(VIRTUAL_ENV) ] || python -m venv env
 	@$(VIRTUAL_ENV)/bin/pip install -e .[tests,build]
+	@$(VIRTUAL_ENV)/bin/pip install pre-commit
+	@$(VIRTUAL_ENV)/bin/pre-commit install
 	@touch $(VIRTUAL_ENV)
 
 VERSION	?= minor

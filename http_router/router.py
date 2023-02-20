@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import lru_cache, partial
-from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, Union
+from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, overload
 
-from . import MethodNotAllowed, NotFound, RouterError  # noqa
-from .types import TMethodsArg, TPath, TVMatch
+from .exceptions import MethodNotAllowed, NotFound, RouterError  # noqa
+from .types import TMethodsArg, TPath, TVObj
 from .utils import parse_path
 
 
@@ -33,7 +33,7 @@ class Router:
         self.validator = validator or (lambda _: True)
         self.converter = converter or (lambda v: v)
         self.plain: DefaultDict[str, List[Route]] = defaultdict(list)
-        self.dynamic: List[Route] = list()
+        self.dynamic: List[Route] = []
 
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
@@ -49,7 +49,11 @@ class Router:
 
         return match
 
-    def __route__(self, root: Router, prefix: str, *_, **__):
+    def __getattr__(self, method: str) -> Callable:
+        """Shortcut to the router methods."""
+        return partial(self.route, methods=method)
+
+    def __route__(self, root: Router, prefix: str, *_, **__) -> Router:
         """Bind self as a nested router."""
         route = Mount(prefix, set(), router=self)
         root.dynamic.insert(0, route)
@@ -70,7 +74,7 @@ class Router:
 
     def bind(
         self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts
-    ):
+    ) -> List[Route]:
         """Bind a target to self."""
         if opts:
             target = partial(target, **opts)
@@ -105,33 +109,24 @@ class Router:
 
     def route(
         self,
-        path: Union[TVMatch, TPath],
+        path: TPath,
         *paths: TPath,
         methods: Optional[TMethodsArg] = None,
         **opts,
-    ) -> Callable:
+    ) -> Callable[[TVObj], TVObj]:
         """Register a route."""
 
-        def wrapper(target: TVMatch) -> TVMatch:
+        def wrapper(target: TVObj) -> TVObj:
             if hasattr(target, "__route__"):
-                target.__route__(self, *paths, methods=methods, **opts)
+                target.__route__(self, path, *paths, methods=methods, **opts)
                 return target
 
             if not self.validator(target):  # type: ignore
                 raise self.RouterError("Invalid target: %r" % target)
 
-            if not paths:
-                raise self.RouterError("Invalid route. A HTTP Path is required.")
-
             target = self.converter(target)
-            self.bind(target, *paths, methods=methods, **opts)
+            self.bind(target, path, *paths, methods=methods, **opts)
             return target
-
-        if isinstance(path, TPath.__args__):  # type: ignore
-            paths = (path, *paths)
-
-        else:
-            return wrapper(path)  # type: ignore
 
         return wrapper
 
@@ -140,10 +135,6 @@ class Router:
         return sorted(
             self.dynamic + [r for routes in self.plain.values() for r in routes]
         )
-
-    def __getattr__(self, method: str) -> Callable:
-        """Shortcut to the router methods."""
-        return partial(self.route, methods=method)
 
 
 from .routes import DynamicRoute, Mount, Route, RouteMatch  # noqa

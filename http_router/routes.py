@@ -15,7 +15,7 @@ class RouteMatch:
         self,
         path: bool,
         method: bool,
-        target: Any = None,
+        target=None,
         params: Optional[Mapping[str, Any]] = None,
     ):
         self.path = path
@@ -42,7 +42,7 @@ class Route:
         self.methods = methods
         self.target = target
 
-    def __lt__(self, route: "Route"):
+    def __lt__(self, route: "Route") -> bool:
         assert isinstance(route, Route), "Only routes are supported"
         return self.path < route.path
 

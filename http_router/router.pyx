@@ -2,9 +2,9 @@ from collections import defaultdict
 from functools import lru_cache, partial
 from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, Union
 
-from . import MethodNotAllowed, NotFound, RouterError  # noqa
-from .types import TMethodsArg, TPath, TVMatch
+from .types import TMethodsArg, TPath, TVObj
 from .utils import parse_path
+from .exceptions import MethodNotAllowed, NotFound, RouterError
 
 
 cdef class Router:
@@ -99,33 +99,24 @@ cdef class Router:
 
     def route(
         self,
-        path: Union[TVMatch, TPath],
+        path: TPath,
         *paths: TPath,
         methods: Optional[TMethodsArg] = None,
         **opts
-    ) -> Callable:
+    ):
         """Register a route."""
 
-        def wrapper(target: TVMatch) -> TVMatch:
+        def wrapper(target: TVObj) -> TVObj:
             if hasattr(target, '__route__'):
-                target.__route__(self, *paths, methods=methods, **opts)
+                target.__route__(self, path, *paths, methods=methods, **opts)
                 return target
 
             if not self.validator(target):  # type: ignore
                 raise self.RouterError('Invalid target: %r' % target)
 
-            if not paths:
-                raise self.RouterError('Invalid route. A HTTP Path is required.')
-
             target = self.converter(target)
-            self.bind(target, *paths, methods=methods, **opts)
+            self.bind(target, path, *paths, methods=methods, **opts)
             return target
-
-        if isinstance(path, TPath.__args__):  # type: ignore
-            paths = (path, *paths)
-
-        else:
-            return wrapper(path)  # type: ignore
 
         return wrapper
 
