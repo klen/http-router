@@ -8,42 +8,6 @@ on:
 
 jobs:
 
-  # We have to repeat https://github.com/actions/toolkit/issues/501
-  cythonize:
-    runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
-
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 5
-
-    - uses: actions/cache@v2.1.5
-      id: cache-c
-      with:
-        path: http_router/*.c
-        key: ${{ hashFiles('http_router/router.pyx', 'http_router/routes.pyx', 'http_router/router.pxd', 'http_router/routes.pxd') }}
-
-    - name: Cythonize the package
-      run: |
-        pip install cython --install-option="--no-cython-compile"
-        cython http_router/router.pyx
-        cython http_router/routes.pyx
-      if: steps.cache-c.outputs.cache-hit != 'true'
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: http_router
-        path: http_router/*.c
-
-    - name: Build sdist
-      run: python3 setup.py sdist
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: dist
-        path: dist/*.tar.*
-
   build:
     strategy:
       matrix:
@@ -72,7 +36,6 @@ jobs:
           cibw_arch: aarch64
 
     runs-on: ${{ matrix.os }}
-    needs: cythonize
 
     defaults:
       run:
@@ -91,16 +54,14 @@ jobs:
       with:
         platforms: arm64
 
-    - uses: actions/download-artifact@v2
-      with:
-        name: http_router
-        path: http_router
-
     - uses: pypa/cibuildwheel@main
       env:
         CIBW_BUILD_VERBOSITY: 1
         CIBW_BUILD: ${{ matrix.cibw_python }}
         CIBW_ARCHS: ${{ matrix.cibw_arch }}
+
+    - name: Build sdist
+      run: python3 setup.py sdist
 
     - uses: actions/upload-artifact@v2
       with:
