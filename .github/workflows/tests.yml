@@ -25,13 +25,13 @@ jobs:
         fetch-depth: 5
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@main
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
 
     - name: Setup requirements
-      run: pip install .[dev]
+      run: pip install .[tests,dev]
 
     - name: Check types
       run: mypy

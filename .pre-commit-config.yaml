@@ -14,7 +14,7 @@ repos:
   rev: 'v0.0.245'
   hooks:
   - id: ruff
-    name: Check Code
+    name: Check code
     args: [--fix, --exit-non-zero-on-fix]
 
 - repo: local
@@ -24,7 +24,7 @@ repos:
     entry: mypy http_router
     language: system
     pass_filenames: false
-  - id: check-code
+  - id: refactor-code
     name: Refactor code
     entry: refurb http_router
     language: system
