@@ -39,6 +39,9 @@ tests = [
 ]
 dev = ["bump2version", "refurb; python_version >= '3.9'", "tox"]
 
+[tool.setuptools]
+packages = ['http_router']
+
 [tool.setuptools.package-data]
 http_router = [
   "py.typed",
