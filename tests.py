@@ -20,10 +20,10 @@ def router() -> "Router":
 def test_router_basic(router: "Router"):
     assert router
     assert not router.trim_last_slash
-    assert router.validator
-    assert router.NotFound
-    assert router.RouterError
-    assert router.MethodNotAllowed
+    assert router.validator is not None
+    assert router.NotFound is not None
+    assert router.RouterError is not None
+    assert router.MethodNotAllowed is not None
 
     router.trim_last_slash = True
     assert router.trim_last_slash

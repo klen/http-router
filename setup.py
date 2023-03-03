@@ -2,19 +2,21 @@
 
 import os
 import sys
-from setuptools import setup, Extension
 
+from Cython.Build import cythonize
+from setuptools import setup
 
-NO_EXTENSIONS = (
-    sys.implementation.name != 'cpython' or
-    bool(os.environ.get("HTTP_ROUTER_NO_EXTENSIONS"))
+NO_EXTENSIONS = sys.implementation.name != "cpython" or bool(
+    os.environ.get("HTTP_ROUTER_NO_EXTENSIONS")
 )
-EXT_MODULES = [] if NO_EXTENSIONS else [
-    Extension("http_router.router", ["http_router/router.c"], extra_compile_args=['-O2']),
-    Extension("http_router.routes", ["http_router/routes.c"], extra_compile_args=['-O2']),
-]
+
+print("*********************")
+print("* Pure Python build *" if NO_EXTENSIONS else "* Accelerated build *")
+print("*********************")
 
 setup(
     setup_requires=["wheel"],
-    ext_modules=EXT_MODULES,
+    ext_modules=[]
+    if NO_EXTENSIONS
+    else cythonize("http_router/*.pyx", language_level=3),
 )
