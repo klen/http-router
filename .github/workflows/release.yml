@@ -16,8 +16,11 @@ jobs:
       with:
         fetch-depth: 2
 
+    - name: Prepare to build
+      run: pip install build
+
     - name: Build sdist
-      run: python setup.py sdist
+      run: python -m build --sdist
 
     - uses: actions/upload-artifact@v2
       with:
