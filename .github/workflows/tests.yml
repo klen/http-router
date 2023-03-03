@@ -31,7 +31,7 @@ jobs:
         cache: pip
 
     - name: Setup requirements
-      run: pip install .[tests,dev]
+      run: pip install .[tests]
 
     - name: Check types
       run: mypy

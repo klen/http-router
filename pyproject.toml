@@ -37,7 +37,7 @@ tests = [
   "pytest-benchmark",
   "pytest-mypy; implementation_name == 'cpython'",
 ]
-dev = ["refurb", "bump2version"]
+dev = ["bump2version", "refurb; python_version >= '3.9'", "tox"]
 
 [tool.setuptools.package-data]
 http_router = [
