@@ -1,9 +1,13 @@
-from typing import Any, Callable, Dict, Mapping, Optional, Pattern, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Pattern, cast
 from urllib.parse import unquote
 
 from .router import Router
-from .types import TMethods
-from .utils import INDENTITY, parse_path
+from .utils import identity, parse_path
+
+if TYPE_CHECKING:
+    from .types import TMethods
 
 
 class RouteMatch:
@@ -36,7 +40,7 @@ class Route:
     __slots__ = "path", "methods", "target"
 
     def __init__(
-        self, path: str, methods: Optional[TMethods] = None, target: Any = None
+        self, path: str, methods: Optional[TMethods] = None, target: Any = None,
     ):
         self.path = path
         self.methods = methods
@@ -50,7 +54,7 @@ class Route:
         """Is the route match the path."""
         methods = self.methods
         return RouteMatch(
-            path == self.path, methods is None or (method in methods), self.target
+            path == self.path, methods is None or (method in methods), self.target,
         )
 
 
@@ -68,14 +72,14 @@ class DynamicRoute(Route):
         params: Optional[Dict] = None,
     ):
         if pattern is None:
-            path, pattern, params = parse_path(path)  # type: ignore
+            path, pattern, params = parse_path(path)
             assert pattern, "Invalid path"
         self.pattern = pattern
         self.params = params or {}
         super(DynamicRoute, self).__init__(path, methods, target)
 
     def match(self, path: str, method: str) -> RouteMatch:
-        match = self.pattern.match(path)  # type: ignore  # checked in __post_init__
+        match = self.pattern.match(path)
         if not match:
             return RouteMatch(False, False)
 
@@ -84,7 +88,7 @@ class DynamicRoute(Route):
             not self.methods or method in self.methods,
             self.target,
             {
-                key: self.params.get(key, INDENTITY)(unquote(value))
+                key: self.params.get(key, identity)(unquote(value))
                 for key, value in match.groupdict().items()
             },
         )
@@ -94,7 +98,7 @@ class PrefixedRoute(Route):
     """Match by a prefix."""
 
     def __init__(
-        self, path: str, methods: Optional[TMethods] = None, target: Any = None
+        self, path: str, methods: Optional[TMethods] = None, target: Any = None,
     ):
         path, pattern, _ = parse_path(path)
         if pattern:
@@ -106,7 +110,7 @@ class PrefixedRoute(Route):
         """Is the route match the path."""
         methods = self.methods
         return RouteMatch(
-            path.startswith(self.path), not methods or (method in methods), self.target
+            path.startswith(self.path), not methods or (method in methods), self.target,
         )
 
 
@@ -131,3 +135,5 @@ class Mount(PrefixedRoute):
             return target(path[len(self.path) :], method)
 
         return match
+
+# ruff: noqa: FBT001, FBT003, PLR0913

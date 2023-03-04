@@ -1,6 +1,8 @@
 """HTTP Router tests."""
+from __future__ import annotations
 
 import inspect
+from contextlib import suppress
 from re import compile as re
 from typing import TYPE_CHECKING, Pattern
 
@@ -10,9 +12,9 @@ if TYPE_CHECKING:
     from http_router import Router
 
 
-@pytest.fixture
+@pytest.fixture()
 def router() -> "Router":
-    from http_router import MethodNotAllowed, NotFound, Router, RouterError  # noqa
+    from http_router import Router
 
     return Router()
 
@@ -21,9 +23,9 @@ def test_router_basic(router: "Router"):
     assert router
     assert not router.trim_last_slash
     assert router.validator is not None
-    assert router.NotFound is not None
+    assert router.NotFoundError is not None
     assert router.RouterError is not None
-    assert router.MethodNotAllowed is not None
+    assert router.InvalidMethodError is not None
 
     router.trim_last_slash = True
     assert router.trim_last_slash
@@ -53,7 +55,7 @@ def test_router_route_str(router):
     match = router("test.jpg")
     assert match
 
-    with pytest.raises(router.NotFound):
+    with pytest.raises(router.NotFoundError):
         router("test.jpeg")
 
     router.route("/any/{item}")(True)
@@ -102,7 +104,7 @@ def test_parse_path():
     assert path
 
     path, regex, params = parse_path(
-        r"/api/v1/items/{item:str}/subitems/{ subitem:\d{3} }/find"
+        r"/api/v1/items/{item:str}/subitems/{ subitem:\d{3} }/find",
     )
     assert path == "/api/v1/items/{item}/subitems/{subitem}/find"
     assert regex.match("/api/v1/items/foo/subitems/300/find")
@@ -148,7 +150,7 @@ def test_router():
 
     router = Router(trim_last_slash=True)
 
-    with pytest.raises(router.NotFound):
+    with pytest.raises(router.NotFoundError):
         assert router("/unknown")
 
     router.route("/", "/simple")("simple")
@@ -164,7 +166,7 @@ def test_router():
     router.route("/only-post", methods="post")("only-post")
     assert router.plain["/only-post"][0].methods == {"POST"}
 
-    with pytest.raises(router.MethodNotAllowed):
+    with pytest.raises(router.InvalidMethodError):
         assert router("/only-post")
 
     match = router("/only-post", "POST")
@@ -239,10 +241,10 @@ def test_trim_last_slash():
     assert router("/route1").target == "route1"
     assert router("/route2/").target == "route2"
 
-    with pytest.raises(router.NotFound):
+    with pytest.raises(router.NotFoundError):
         assert not router("/route1/")
 
-    with pytest.raises(router.NotFound):
+    with pytest.raises(router.NotFoundError):
         assert not router("/route2")
 
     router = Router(trim_last_slash=True)
@@ -312,13 +314,13 @@ def test_nested_routers():
     root = Router()
     root.route("/child")(child)
 
-    with pytest.raises(root.NotFound):
+    with pytest.raises(root.NotFoundError):
         root("/child")
 
-    with pytest.raises(root.NotFound):
+    with pytest.raises(root.NotFoundError):
         root("/child/unknown")
 
-    with pytest.raises(root.MethodNotAllowed):
+    with pytest.raises(root.InvalidMethodError):
         root("/child/url")
 
     match = root("/child/url", "PATCH")
@@ -353,26 +355,26 @@ def test_benchmark(router, benchmark):
     import random
     import string
 
-    CHARS = string.ascii_letters + string.digits
-    RANDOM = lambda: "".join(random.choices(CHARS, k=10))  # noqa
-    METHODS = "GET", "POST"
+    chars = string.ascii_letters + string.digits
+    randpath = lambda: "".join(random.choices(chars, k=10))  # noqa: E731
+    methods = "GET", "POST"
 
-    routes = [f"/{ RANDOM() }/{ RANDOM() }" for _ in range(100)]
-    routes += [f"/{ RANDOM() }/{{item}}/{ RANDOM() }" for _ in range(100)]
+    routes = [f"/{ randpath() }/{ randpath() }" for _ in range(100)]
+    routes += [f"/{ randpath() }/{{item}}/{ randpath() }" for _ in range(100)]
     random.shuffle(routes)
 
     paths = []
     for route in routes:
-        router.route(route, methods=random.choice(METHODS))("OK")
-        paths.append(route.format(item=RANDOM()))
+        router.route(route, methods=random.choice(methods))("OK")
+        paths.append(route.format(item=randpath()))
 
-    paths = [route.format(item=RANDOM()) for route in routes]
+    paths = [route.format(item=randpath()) for route in routes]
 
     def do_work():
         for path in paths:
-            try:
+            with suppress(router.InvalidMethodError):
                 assert router(path)
-            except router.MethodNotAllowed:
-                pass
 
     benchmark(do_work)
+
+# ruff: noqa: FBT003

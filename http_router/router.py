@@ -2,22 +2,25 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import lru_cache, partial
-from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, DefaultDict, List, Optional, Type
 
-from .exceptions import MethodNotAllowed, NotFound, RouterError  # noqa
-from .types import TMethodsArg, TPath, TVObj
+from .exceptions import InvalidMethodError, NotFoundError, RouterError
 from .utils import parse_path
+
+if TYPE_CHECKING:
+    from .types import TMethodsArg, TPath, TVObj
 
 
 class Router:
     """Route HTTP queries."""
 
-    NotFound: ClassVar[Type[Exception]] = NotFound  # noqa
-    RouterError: ClassVar[Type[Exception]] = RouterError  # noqa
-    MethodNotAllowed: ClassVar[Type[Exception]] = MethodNotAllowed  # noqa
+    NotFoundError: ClassVar[Type[Exception]] = NotFoundError
+    RouterError: ClassVar[Type[Exception]] = RouterError
+    InvalidMethodError: ClassVar[Type[Exception]] = InvalidMethodError
 
     def __init__(
         self,
+        *,
         trim_last_slash: bool = False,
         validator: Optional[Callable[[Any], bool]] = None,
         converter: Optional[Callable] = None,
@@ -42,10 +45,10 @@ class Router:
 
         match = self.match(path, method)
         if not match.path:
-            raise self.NotFound(path, method)
+            raise self.NotFoundError(path, method)
 
         if not match.method:
-            raise self.MethodNotAllowed(path, method)
+            raise self.InvalidMethodError(path, method)
 
         return match
 
@@ -59,7 +62,7 @@ class Router:
         root.dynamic.insert(0, route)
         return self
 
-    @lru_cache(maxsize=1024)
+    @lru_cache(maxsize=1024)  # noqa: B019
     def match(self, path: str, method: str) -> RouteMatch:
         """Search a matched target for the given path and method."""
         neighbour = None
@@ -70,10 +73,10 @@ class Router:
                     return match
                 neighbour = match
 
-        return RouteMatch(False, False) if neighbour is None else neighbour
+        return RouteMatch(path=False, method=False) if neighbour is None else neighbour
 
     def bind(
-        self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts
+        self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts,
     ) -> List[Route]:
         """Bind a target to self."""
         if opts:
@@ -83,11 +86,12 @@ class Router:
             methods = [methods]
 
         if methods is not None:
-            methods = set(m.upper() for m in methods or [])
+            methods = {m.upper() for m in methods or []}
 
         routes = []
 
-        for path in paths:
+        for src in paths:
+            path = src
             if self.trim_last_slash and isinstance(path, str):
                 path = path.rstrip("/")
 
@@ -95,7 +99,7 @@ class Router:
 
             if pattern:
                 route: Route = DynamicRoute(
-                    path, methods=methods, target=target, pattern=pattern, params=params
+                    path, methods=methods, target=target, pattern=pattern, params=params,
                 )
                 self.dynamic.append(route)
 
@@ -120,7 +124,7 @@ class Router:
                 target.__route__(self, *paths, methods=methods, **opts)
                 return target
 
-            if not self.validator(target):  # type: ignore
+            if not self.validator(target):
                 raise self.RouterError("Invalid target: %r" % target)
 
             target = self.converter(target)
@@ -132,10 +136,8 @@ class Router:
     def routes(self) -> List[Route]:
         """Get a list of self routes."""
         return sorted(
-            self.dynamic + [r for routes in self.plain.values() for r in routes]
+            self.dynamic + [r for routes in self.plain.values() for r in routes],
         )
 
 
-from .routes import DynamicRoute, Mount, Route, RouteMatch  # noqa
-
-# pylama: ignore=D
+from .routes import DynamicRoute, Mount, Route, RouteMatch  # noqa:

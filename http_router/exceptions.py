@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+
 class RouterError(Exception):
     pass
 
 
-class NotFound(RouterError):
+class NotFoundError(RouterError):
     pass
 
 
-class MethodNotAllowed(RouterError):
+class InvalidMethodError(RouterError):
     pass

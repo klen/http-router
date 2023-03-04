@@ -2,7 +2,7 @@ from typing import Pattern, Union
 from urllib.parse import unquote
 
 from .router import Router
-from .utils import parse_path, INDENTITY
+from .utils import parse_path, identity
 
 
 cdef class RouteMatch:
@@ -63,7 +63,7 @@ cdef class DynamicRoute(Route):
 
         cdef bint method_ = not self.methods or method in self.methods
         cdef dict path_params = {
-            key: self.params.get(key, INDENTITY)(unquote(value))
+            key: self.params.get(key, identity)(unquote(value))
             for key, value in match.groupdict().items()
         }
 

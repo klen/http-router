@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Callable
-from typing import Dict, Optional, Pattern, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Pattern, Tuple
 from uuid import UUID
 
-from .types import TPath
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-INDENTITY = lambda v: v  # noqa
+    from .types import TPath, TVObj
+
+def identity(v: TVObj) -> TVObj:
+    """Identity function."""
+    return v
 
 
 VAR_RE = re.compile(r"^(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<var_type>.+))?$")
@@ -24,7 +30,7 @@ def parse_path(path: TPath) -> Tuple[str, Optional[Pattern], Dict[str, Callable]
         return path.pattern, path, {}
 
     src, regex, path = path.strip(" "), "^", ""
-    params = {}
+    params: Dict[str, Callable] = {}
     idx, cur, group = 0, 0, None
     while cur < len(src):
         sym = src[cur]
@@ -45,7 +51,7 @@ def parse_path(path: TPath) -> Tuple[str, Optional[Pattern], Dict[str, Callable]
             if match:
                 opts = match.groupdict("str")
                 var_type_re, params[opts["var"]] = VAR_TYPES.get(
-                    opts["var_type"], (opts["var_type"], INDENTITY)
+                    opts["var_type"], (opts["var_type"], identity),
                 )
                 regex += (
                     re.escape(src[idx : group - 1])

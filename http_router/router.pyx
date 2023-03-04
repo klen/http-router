@@ -4,15 +4,15 @@ from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, U
 
 from .types import TMethodsArg, TPath, TVObj
 from .utils import parse_path
-from .exceptions import MethodNotAllowed, NotFound, RouterError
+from .exceptions import InvalidMethodError, NotFoundError, RouterError
 
 
 cdef class Router:
     """Route HTTP queries."""
 
-    NotFound: ClassVar[Type[Exception]] = NotFound                  # noqa
-    RouterError: ClassVar[Type[Exception]] = RouterError            # noqa
-    MethodNotAllowed: ClassVar[Type[Exception]] = MethodNotAllowed  # noqa
+    NotFoundError: ClassVar[Type[Exception]] = NotFoundError            # noqa
+    RouterError: ClassVar[Type[Exception]] = RouterError                # noqa
+    InvalidMethodError: ClassVar[Type[Exception]] = InvalidMethodError  # noqa
 
     def __init__(
             self,
@@ -35,10 +35,10 @@ cdef class Router:
         match = self.match(path, method)
 
         if match is None:
-            raise self.NotFound(path, method)
+            raise self.NotFoundError(path, method)
 
         if not match.method:
-            raise self.MethodNotAllowed(path, method)
+            raise self.InvalidMethodError(path, method)
 
         return match
 

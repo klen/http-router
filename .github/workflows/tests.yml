@@ -33,6 +33,10 @@ jobs:
     - name: Setup requirements
       run: pip install .[tests]
 
+    - name: Check code
+      run: ruff http_router
+      if: matrix.python-version != 'pypy-3.9'
+
     - name: Check types
       run: mypy
       if: matrix.python-version != 'pypy-3.9'

@@ -33,6 +33,7 @@ documentation = "https://github.com/klen/http-router"
 
 [project.optional-dependencies]
 tests = [
+  "ruff",
   "pytest",
   "pytest-benchmark",
   "pytest-mypy; implementation_name == 'cpython'",
@@ -76,3 +77,14 @@ deps = -e .[tests]
 commands =
 	pytest
 """
+
+[tool.ruff]
+fix = false
+line-length = 100
+target-version = "py37"
+exclude = [".venv", "docs", "examples"]
+select = ["ALL"]
+ignore = ["D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
+
+[tool.ruff.isort]
+required-imports = ["from __future__ import annotations"]
