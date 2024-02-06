@@ -286,7 +286,6 @@ def test_custom_route():
 
     @router.route()
     class View:
-
         methods = "get", "post"
 
         def __new__(cls, *args, **kwargs):
@@ -377,4 +376,23 @@ def test_benchmark(router, benchmark):
 
     benchmark(do_work)
 
-# ruff: noqa: FBT003
+
+def test_readme_examples():
+    from http_router import Router
+
+    subrouter = Router()
+
+    @subrouter.route("/items/{item}")
+    def items():
+        pass
+
+    router = Router()
+    router.route("/api")(subrouter)
+
+    match = router("/api/items/12", method="GET")
+    assert match, "HTTP path is ok"
+    assert match.target is items
+    assert match.params == {"item": "12"}
+
+
+# ruff: noqa: FBT003, S311
