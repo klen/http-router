@@ -147,7 +147,7 @@ Submounting routes:
 
    subrouter = Router()
 
-   @subrouter('/items')
+   @subrouter.route('/items')
    def items():
         pass
 
