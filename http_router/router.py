@@ -2,7 +2,16 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, DefaultDict, List, Optional, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    DefaultDict,
+    List,
+    Optional,
+    Type,
+)
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
 from .utils import parse_path
@@ -76,7 +85,11 @@ class Router:
         return RouteMatch(path=False, method=False) if neighbour is None else neighbour
 
     def bind(
-        self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts,
+        self,
+        target: Any,
+        *paths: TPath,
+        methods: Optional[TMethodsArg] = None,
+        **opts,
     ) -> List[Route]:
         """Bind a target to self."""
         if opts:
@@ -99,7 +112,11 @@ class Router:
 
             if pattern:
                 route: Route = DynamicRoute(
-                    path, methods=methods, target=target, pattern=pattern, params=params,
+                    path,
+                    methods=methods,
+                    target=target,
+                    pattern=pattern,
+                    params=params,
                 )
                 self.dynamic.append(route)
 
@@ -140,4 +157,4 @@ class Router:
         )
 
 
-from .routes import DynamicRoute, Mount, Route, RouteMatch  # noqa:
+from .routes import DynamicRoute, Mount, Route, RouteMatch  # noqa: E402

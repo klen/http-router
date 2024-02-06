@@ -7,7 +7,7 @@ version = "4.0.0"
 description = "A simple router system for HTTP applications"
 readme = "README.rst"
 requires-python = ">=3.7"
-license = {"text" = "MIT License"}
+license = { "text" = "MIT License" }
 authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
 keywords = ["http", "router", "web", "framework"]
 classifiers = [
@@ -32,25 +32,14 @@ repository = "https://github.com/klen/http-router"
 documentation = "https://github.com/klen/http-router"
 
 [project.optional-dependencies]
-tests = [
-  "ruff",
-  "pytest",
-  "pytest-benchmark",
-  "pytest-mypy; implementation_name == 'cpython'",
-]
+tests = ["ruff", "pytest", "pytest-benchmark", "pytest-mypy; implementation_name == 'cpython'"]
 dev = ["bump2version", "refurb; python_version >= '3.9'", "tox"]
 
 [tool.setuptools]
 packages = ['http_router']
 
 [tool.setuptools.package-data]
-http_router = [
-  "py.typed",
-  "router.pxd",
-  "router.pyx",
-  "routes.pxd",
-  "routes.pyx"
-]
+http_router = ["py.typed", "router.pxd", "router.pyx", "routes.pxd", "routes.pyx"]
 
 [tool.pytest.ini_options]
 addopts = "-xsv"
@@ -83,8 +72,8 @@ fix = false
 line-length = 100
 target-version = "py37"
 exclude = [".venv", "docs", "examples"]
+
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = ["D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
-
-[tool.ruff.isort]
-required-imports = ["from __future__ import annotations"]
+isort.required-imports = ["from __future__ import annotations"]
