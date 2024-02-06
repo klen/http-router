@@ -5,6 +5,9 @@ HTTP Router
 
 **http-router** -- A simple router for HTTP applications
 
+The library is not a HTTP framework. It's an utilite to build the frameworks.
+The main goal of the library to bind targets to http routes and match them.
+
 .. _badges:
 
 .. image:: https://github.com/klen/http-router/workflows/tests/badge.svg
@@ -147,7 +150,7 @@ Submounting routes:
 
    subrouter = Router()
 
-   @subrouter.route('/items')
+   @subrouter.route('/items/{item}')
    def items():
         pass
 
@@ -155,9 +158,10 @@ Submounting routes:
     router.route('/api')(subrouter)
 
 
-   match = router('/api/items', method='GET')
+   match = router('/api/items/12', method='GET')
    assert match, 'HTTP path is ok'
    assert match.target is items
+    assert match.params == {"item": "12"}
 
 
 .. _bugtracker:
