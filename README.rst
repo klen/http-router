@@ -29,7 +29,7 @@ HTTP Router
 Requirements
 =============
 
-- python >= 3.7
+- python 3.8, 3.9, 3.10, 3.11, 3.12, pypy3
 
 
 .. _installation:
@@ -48,7 +48,7 @@ Usage
 Create a router:
 
 .. code:: python
-    
+
     from http_router import Router
 
 
