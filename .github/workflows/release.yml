@@ -78,7 +78,7 @@ jobs:
 
     - uses: actions/upload-artifact@main
       with:
-        name: wheel
+        name: wheel-${{ matrix.os }}-${{ matrix.cibw_arch }}-${{ matrix.cibw_python }}
         path: wheelhouse/*.whl
 
   publish:
