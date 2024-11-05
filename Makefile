@@ -6,7 +6,6 @@ all: $(VIRTUAL_ENV)
 $(VIRTUAL_ENV): pyproject.toml
 	@[ -d $(VIRTUAL_ENV) ] || python -m venv env
 	@$(VIRTUAL_ENV)/bin/pip install -e .[tests,dev]
-	@$(VIRTUAL_ENV)/bin/pip install pre-commit
 	@$(VIRTUAL_ENV)/bin/pre-commit install --hook-type pre-push
 	@touch $(VIRTUAL_ENV)
 

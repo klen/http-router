@@ -23,9 +23,9 @@ repos:
     entry: mypy http_router
     language: system
     pass_filenames: false
-  - id: refactor-code
+  - id: check-code
     name: Refactor code
-    entry: refurb http_router
+    entry: ruff check http_router
     language: system
     pass_filenames: false
   - id: run-tests

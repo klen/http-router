@@ -33,7 +33,7 @@ documentation = "https://github.com/klen/http-router"
 
 [project.optional-dependencies]
 tests = ["ruff", "pytest", "pytest-benchmark", "pytest-mypy; implementation_name == 'cpython'"]
-dev = ["bump2version", "tox"]
+dev = ["bump2version", "tox", "pre-commit"]
 
 [tool.setuptools]
 packages = ['http_router']
