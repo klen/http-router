@@ -26,6 +26,7 @@ jobs:
 
     - uses: actions/upload-artifact@main
       with:
+        name: dist
         path: dist/*.tar.*
 
   build:
@@ -77,6 +78,7 @@ jobs:
 
     - uses: actions/upload-artifact@main
       with:
+        name: wheel
         path: wheelhouse/*.whl
 
   publish:
