@@ -34,7 +34,7 @@ jobs:
       run: pip install .[tests]
 
     - name: Check code
-      run: ruff http_router
+      run: ruff check http_router
       if: matrix.python-version != 'pypy-3.10'
 
     - name: Check types

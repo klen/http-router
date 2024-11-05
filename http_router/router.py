@@ -7,10 +7,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    DefaultDict,
-    List,
     Optional,
-    Type,
 )
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
@@ -23,9 +20,9 @@ if TYPE_CHECKING:
 class Router:
     """Route HTTP queries."""
 
-    NotFoundError: ClassVar[Type[Exception]] = NotFoundError
-    RouterError: ClassVar[Type[Exception]] = RouterError
-    InvalidMethodError: ClassVar[Type[Exception]] = InvalidMethodError
+    NotFoundError: ClassVar[type[Exception]] = NotFoundError
+    RouterError: ClassVar[type[Exception]] = RouterError
+    InvalidMethodError: ClassVar[type[Exception]] = InvalidMethodError
 
     def __init__(
         self,
@@ -44,8 +41,8 @@ class Router:
         self.trim_last_slash = trim_last_slash
         self.validator = validator or (lambda _: True)
         self.converter = converter or (lambda v: v)
-        self.plain: DefaultDict[str, List[Route]] = defaultdict(list)
-        self.dynamic: List[Route] = []
+        self.plain: defaultdict[str, list[Route]] = defaultdict(list)
+        self.dynamic: list[Route] = []
 
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
@@ -90,7 +87,7 @@ class Router:
         *paths: TPath,
         methods: Optional[TMethodsArg] = None,
         **opts,
-    ) -> List[Route]:
+    ) -> list[Route]:
         """Bind a target to self."""
         if opts:
             target = partial(target, **opts)
@@ -150,7 +147,7 @@ class Router:
 
         return wrapper
 
-    def routes(self) -> List[Route]:
+    def routes(self) -> list[Route]:
         """Get a list of self routes."""
         return sorted(
             self.dynamic + [r for routes in self.plain.values() for r in routes],

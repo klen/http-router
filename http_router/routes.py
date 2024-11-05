@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Pattern, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Pattern, cast
 from urllib.parse import unquote
 
 from .router import Router
@@ -69,7 +69,7 @@ class DynamicRoute(Route):
         methods: Optional[TMethods] = None,
         target: Any = None,
         pattern: Optional[Pattern] = None,
-        params: Optional[Dict] = None,
+        params: Optional[dict] = None,
     ):
         if pattern is None:
             path, pattern, params = parse_path(path)

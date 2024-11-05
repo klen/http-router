@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Dict, Optional, Pattern, Tuple
+from typing import TYPE_CHECKING, Optional, Pattern
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -24,13 +24,13 @@ VAR_TYPES = {
 }
 
 
-def parse_path(path: TPath) -> Tuple[str, Optional[Pattern], Dict[str, Callable]]:
+def parse_path(path: TPath) -> tuple[str, Optional[Pattern], dict[str, Callable]]:
     """Prepare the given path to regexp it."""
     if isinstance(path, Pattern):
         return path.pattern, path, {}
 
     src, regex, path = path.strip(" "), "^", ""
-    params: Dict[str, Callable] = {}
+    params: dict[str, Callable] = {}
     idx, cur, group = 0, 0, None
     while cur < len(src):
         sym = src[cur]
