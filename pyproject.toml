@@ -6,7 +6,7 @@ name = "http-router"
 version = "4.1.2"
 description = "A simple router system for HTTP applications"
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { "text" = "MIT License" }
 authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
 keywords = ["http", "router", "web", "framework"]
@@ -16,11 +16,11 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Programming Language :: Cython",
   "Topic :: Internet :: WWW/HTTP",
@@ -33,7 +33,7 @@ documentation = "https://github.com/klen/http-router"
 
 [project.optional-dependencies]
 tests = ["ruff", "pytest", "pytest-benchmark", "pytest-mypy; implementation_name == 'cpython'"]
-dev = ["bump2version", "refurb; python_version >= '3.9'", "tox"]
+dev = ["bump2version", "tox"]
 
 [tool.setuptools]
 packages = ['http_router']
@@ -54,7 +54,7 @@ packages = ["http_router"]
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py38,py39,py310,py311,py312,pypy310
+envlist = py39,py310,py311,py312,py313,pypy310
 
 [testenv]
 deps = -e .[tests]
@@ -70,7 +70,7 @@ commands =
 [tool.ruff]
 fix = false
 line-length = 100
-target-version = "py38"
+target-version = "py39"
 exclude = [".venv", "docs", "examples"]
 
 [tool.ruff.lint]
