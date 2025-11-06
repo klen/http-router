@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class RouteMatch:
     """Keeping route matching data."""
 
-    __slots__ = "path", "method", "target", "params"
+    __slots__ = "method", "params", "path", "target"
 
     def __init__(
         self,
@@ -37,7 +37,7 @@ class RouteMatch:
 class Route:
     """Base plain route class."""
 
-    __slots__ = "path", "methods", "target"
+    __slots__ = "methods", "path", "target"
 
     def __init__(
         self, path: str, methods: TMethods | None = None, target: Any = None,
@@ -61,7 +61,7 @@ class Route:
 class DynamicRoute(Route):
     """Base dynamic route class."""
 
-    __slots__ = "path", "methods", "target", "pattern", "params"
+    __slots__ = "methods", "params", "path", "pattern", "target"
 
     def __init__(
         self,
@@ -131,9 +131,9 @@ class Mount(PrefixedRoute):
         """Is the route match the path."""
         match: RouteMatch = super(Mount, self).match(path, method)
         if match:
-            target = cast(Callable, self.target)
+            target = cast("Callable", self.target)
             return target(path[len(self.path) :], method)
 
         return match
 
-# ruff: noqa: FBT001, FBT003, PLR0913
+# ruff: noqa: FBT001, FBT003

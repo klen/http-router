@@ -48,6 +48,9 @@ test t: $(VIRTUAL_ENV)
 mypy: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/mypy $(PACKAGE)
 
+ruff: $(VIRTUAL_ENV)
+	$(VIRTUAL_ENV)/bin/ruff check $(PACKAGE)
+
 $(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
 	$(VIRTUAL_ENV)/bin/cython -a $<
 
