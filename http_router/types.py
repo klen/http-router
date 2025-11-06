@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Pattern, TypeVar, Union
+from typing import Any, Iterable, Pattern, TypeVar
 
 TMethods = Iterable[str]
-TMethodsArg = Union[TMethods, str]
-TPath = Union[str, Pattern]
+TMethodsArg = TMethods | str
+TPath = Pattern | str
 TVObj = TypeVar("TVObj", bound=Any)

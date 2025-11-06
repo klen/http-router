@@ -16,11 +16,11 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Programming Language :: Cython",
   "Topic :: Internet :: WWW/HTTP",
@@ -54,7 +54,7 @@ packages = ["http_router"]
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py39,py310,py311,py312,py313,pypy310
+envlist = py310,py311,py312,py313,py314,pypy311
 
 [testenv]
 deps = -e .[tests]
@@ -67,10 +67,15 @@ commands =
 	pytest
 """
 
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+preview = true
+
 [tool.ruff]
 fix = false
 line-length = 100
-target-version = "py39"
+target-version = "py310"
 exclude = [".venv", "docs", "examples"]
 
 [tool.ruff.lint]

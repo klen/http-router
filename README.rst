@@ -32,7 +32,7 @@ The main goal of the library to bind targets to http routes and match them.
 Requirements
 =============
 
-- python 3.9, 3.10, 3.11, 3.12, 3.13, pypy3
+- python 3.10, 3.11, 3.12, 3.13, 3.14, pypy3
 
 
 .. _installation:

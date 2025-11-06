@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Pattern, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Pattern, cast
 from urllib.parse import unquote
 
 from .router import Router
@@ -20,7 +20,7 @@ class RouteMatch:
         path: bool,
         method: bool,
         target=None,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Mapping[str, Any] | None = None,
     ):
         self.path = path
         self.method = method
@@ -40,7 +40,7 @@ class Route:
     __slots__ = "path", "methods", "target"
 
     def __init__(
-        self, path: str, methods: Optional[TMethods] = None, target: Any = None,
+        self, path: str, methods: TMethods | None = None, target: Any = None,
     ):
         self.path = path
         self.methods = methods
@@ -66,10 +66,10 @@ class DynamicRoute(Route):
     def __init__(
         self,
         path: str,
-        methods: Optional[TMethods] = None,
+        methods: TMethods | None = None,
         target: Any = None,
-        pattern: Optional[Pattern] = None,
-        params: Optional[dict] = None,
+        pattern: Pattern | None = None,
+        params: dict | None = None,
     ):
         if pattern is None:
             path, pattern, params = parse_path(path)
@@ -98,7 +98,7 @@ class PrefixedRoute(Route):
     """Match by a prefix."""
 
     def __init__(
-        self, path: str, methods: Optional[TMethods] = None, target: Any = None,
+        self, path: str, methods: TMethods | None = None, target: Any = None,
     ):
         path, pattern, _ = parse_path(path)
         if pattern:
@@ -120,8 +120,8 @@ class Mount(PrefixedRoute):
     def __init__(
         self,
         path: str,
-        methods: Optional[TMethods] = None,
-        router: Optional[Router] = None,
+        methods: TMethods | None = None,
+        router: Router | None = None,
     ):
         """Validate self prefix."""
         router = router or Router()

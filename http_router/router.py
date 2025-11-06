@@ -2,13 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import lru_cache, partial
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Optional,
-)
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
 from .utils import parse_path
@@ -28,8 +22,8 @@ class Router:
         self,
         *,
         trim_last_slash: bool = False,
-        validator: Optional[Callable[[Any], bool]] = None,
-        converter: Optional[Callable] = None,
+        validator: Callable[[Any], bool] | None = None,
+        converter: Callable | None = None,
     ):
         """Initialize the router.
 
@@ -85,7 +79,7 @@ class Router:
         self,
         target: Any,
         *paths: TPath,
-        methods: Optional[TMethodsArg] = None,
+        methods: TMethodsArg | None = None,
         **opts,
     ) -> list[Route]:
         """Bind a target to self."""
@@ -128,7 +122,7 @@ class Router:
     def route(
         self,
         *paths: TPath,
-        methods: Optional[TMethodsArg] = None,
+        methods: TMethodsArg | None = None,
         **opts,
     ) -> Callable[[TVObj], TVObj]:
         """Register a route."""
