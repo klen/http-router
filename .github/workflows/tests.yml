@@ -34,11 +34,10 @@ jobs:
 
       - name: Check code
         run: ruff check http_router
-        if: matrix.python-version != 'pypy-3.10'
 
       - name: Check types
         run: mypy
-        if: matrix.python-version != 'pypy-3.10'
+        if: matrix.python-version != 'pypy-3.11'
 
       - name: Test with pytest
         run: pytest
