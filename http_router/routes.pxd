@@ -7,7 +7,7 @@ cdef class RouteMatch:
 
     cdef readonly bint path, method
     cdef readonly object target
-    cdef readonly dict params
+    cdef readonly object params
 
 
 cdef class Route:

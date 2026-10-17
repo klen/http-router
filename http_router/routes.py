@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Pattern, cast
 from urllib.parse import unquote
 
@@ -87,10 +88,12 @@ class DynamicRoute(Route):
             True,
             not self.methods or method in self.methods,
             self.target,
-            {
-                key: self.params.get(key, identity)(unquote(value))
-                for key, value in match.groupdict().items()
-            },
+            MappingProxyType(
+                {
+                    key: self.params.get(key, identity)(unquote(value))
+                    for key, value in match.groupdict().items()
+                }
+            ),
         )
 
 

@@ -145,6 +145,19 @@ def test_dynamic_route():
     assert match
 
 
+def test_match_params_immutable():
+    from http_router import Router
+
+    router = Router()
+    router.route("/u/{id}")("u")
+
+    match = router("/u/a")
+    assert match.params == {"id": "a"}
+    with pytest.raises(TypeError):
+        match.params["id"] = "b"
+    assert router("/u/a").params == {"id": "a"}
+
+
 def test_router():
     """Base tests."""
     from http_router import Router

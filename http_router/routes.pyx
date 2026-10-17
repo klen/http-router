@@ -1,3 +1,4 @@
+from types import MappingProxyType
 from typing import Pattern, Union
 from urllib.parse import unquote
 
@@ -8,7 +9,7 @@ from .utils import parse_path, identity
 cdef class RouteMatch:
     """Keeping route matching data."""
 
-    def __cinit__(self, bint path, bint method, object target=None, dict params=None):
+    def __cinit__(self, bint path, bint method, object target=None, object params=None):
         self.path = path
         self.method = method
         self.target = target
@@ -67,7 +68,7 @@ cdef class DynamicRoute(Route):
             for key, value in match.groupdict().items()
         }
 
-        return RouteMatch(True, method_, self.target, path_params)
+        return RouteMatch(True, method_, self.target, MappingProxyType(path_params))
 
 
 cdef class PrefixedRoute(Route):
