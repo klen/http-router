@@ -82,4 +82,3 @@ major:
 
 version v:
 	uv version --short
-
