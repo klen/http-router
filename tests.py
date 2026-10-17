@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from http_router import Router
 
 
-@pytest.fixture()
+@pytest.fixture
 def router() -> "Router":
     from http_router import Router
 
@@ -77,6 +77,18 @@ def test_router_route_str(router):
     match = router("/regex/422")
     assert match
     assert match.params == {"item": "422"}
+
+
+def test_uuid_case_insensitive():
+    from uuid import UUID, uuid4
+
+    from http_router import Router
+
+    router = Router()
+    router.route("/u/{id:uuid}")(None)
+
+    value = str(uuid4())
+    assert router("/u/" + value.upper()).params == {"id": UUID(value)}
 
 
 def test_parse_path():
@@ -406,6 +418,19 @@ def test_readme():
     match = router("/simple")
     assert match.target() == "simple"
     assert match.params is None
+
+
+def test_method_case_insensitive():
+    from http_router import Router
+
+    router = Router()
+    router.route("/x", methods="post")("x")
+
+    assert router("/x", "POST").target == "x"
+    assert router("/x", "post").target == "x"
+
+    with pytest.raises(router.InvalidMethodError):
+        router("/x", "GET")
 
 
 def test_method_shortcuts(router):

@@ -6,7 +6,7 @@ name = "http-router"
 version = "6.0.0"
 description = "A simple router system for HTTP applications"
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { "text" = "MIT License" }
 authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
 keywords = ["http", "router", "web", "framework"]
@@ -81,3 +81,6 @@ exclude = [".venv", "docs", "examples"]
 select = ["ALL"]
 ignore = ["D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
 isort.required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests.py" = ["PLC0415"]

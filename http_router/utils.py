@@ -20,7 +20,7 @@ VAR_TYPES = {
     "int": (r"\d+", int),
     "path": (r".*", str),
     "str": (r"[^/]+", str),
-    "uuid": (r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", UUID),
+    "uuid": (r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", UUID),
 }
 
 

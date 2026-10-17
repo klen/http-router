@@ -57,6 +57,7 @@ cdef class Router:
     @lru_cache(maxsize=1024)
     def match(self, str path, str method) -> 'RouteMatch':
         """Search a matched target for the given path and method."""
+        method = method.upper()
         if self.trim_last_slash:
             path = path.rstrip('/')
 

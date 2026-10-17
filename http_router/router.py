@@ -70,6 +70,7 @@ class Router:
     @lru_cache(maxsize=1024)  # noqa: B019
     def match(self, path: str, method: str) -> RouteMatch:
         """Search a matched target for the given path and method."""
+        method = method.upper()
         if self.trim_last_slash:
             path = path.rstrip("/")
 
