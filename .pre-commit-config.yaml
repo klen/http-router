@@ -16,6 +16,11 @@ repos:
   - id: ruff
     name: Check code
 
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.13.1
+  hooks:
+  - id: uv-lock
+
 - repo: local
   hooks:
   - id: check-types
