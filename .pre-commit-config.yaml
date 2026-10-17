@@ -25,16 +25,16 @@ repos:
   hooks:
   - id: check-types
     name: Check types
-    entry: mypy http_router
+    entry: uv run mypy http_router
     language: system
     pass_filenames: false
   - id: check-code
     name: Refactor code
-    entry: ruff check http_router
+    entry: uv run ruff check http_router
     language: system
     pass_filenames: false
   - id: run-tests
     name: Run tests
-    entry: pytest tests
+    entry: uv run pytest tests
     language: system
     pass_filenames: false
