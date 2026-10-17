@@ -1,21 +1,52 @@
 # http-router
 
-A simple, fast HTTP path router for Python.
+[![Tests](https://github.com/klen/http-router/actions/workflows/tests.yml/badge.svg)](https://github.com/klen/http-router/actions/workflows/tests.yml)
+[![PyPI version](https://img.shields.io/pypi/v/http-router)](https://pypi.org/project/http-router/)
+[![Python versions](https://img.shields.io/pypi/pyversions/http-router)](https://pypi.org/project/http-router/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Find a target function by URL-path and HTTP-method — the way you'd expect it to work.
+A small, fast HTTP path router for Python.
 
-## Requirements
-
-Python 3.10+ (tested on 3.10–3.15 and PyPy).
-
-## Quick Start
+Give it a URL path and an HTTP method, and it hands you the callable you bound
+to that route — together with any path parameters it captured. No framework, no
+request object, no magic.
 
 ```python
 from http_router import Router
 
 app = Router()
 
-@app.route("/health", methods="GET")
+@app.get("/users/{id}")
+def get_user(id):
+    return {"id": id}
+
+match = app("/users/42", "GET")
+match.target(**match.params)  # {"id": "42"}
+```
+
+## Features
+
+- Static (`/users`), dynamic (`/users/{id}`) and regex routes.
+- Typed path parameters: `str`, `int`, `float`, `path`, `uuid`.
+- Any HTTP method, with shortcuts like `app.get` and `app.post`.
+- Compose applications from nested routers.
+- Optional Cython acceleration, with a pure-Python fallback.
+- Python 3.10+ (tested on 3.10–3.15 and PyPy).
+
+## Install
+
+```bash
+pip install http-router
+```
+
+## Quick start
+
+```python
+from http_router import Router
+
+app = Router()
+
+@app.get("/health")
 def health():
     return "ok"
 
@@ -27,129 +58,27 @@ def get_user(id):
 def create_user():
     return {"created": True}
 
-# Handling requests:
 result = app("/users/42", method="GET")
-print(result)  # RouteMatch with target + params {"id": "42"}
+print(result)          # <RouteMatch path:True method:True - ...>
+print(result.target)   # <function get_user>
+print(result.params)   # {'id': '42'}
 ```
 
-## API Reference
+`app(...)` returns a `RouteMatch`:
 
-### Router
+| Attribute | Meaning |
+|-----------|---------|
+| `path` | Whether a route matched the path |
+| `method` | Whether the route allows the HTTP method |
+| `target` | The callable bound to the route |
+| `params` | Captured path parameters, or `None` for static routes |
 
-The main entry point. Map paths to callable targets and resolve requests.
+A `RouteMatch` is truthy only when **both** `path` and `method` match.
 
-```python
-from http_router import Router
-```
+## Path parameters
 
-#### `Router(**kwargs)`
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `trim_last_slash` | `False` | Strip trailing `/` from paths before matching |
-| `validator` | `always_true` | Callable that must return `True` for the target |
-| `converter` | `identity` | Callable that transforms the target before binding |
-
-```python
-app = Router(trim_last_slash=True)
-```
-
-#### `router(path, method="GET")` → RouteMatch / raises
-
-Resolve a path+method to a matched route, or raise an error.
-
-```python
-result = app("/users/42", method="GET")
-
-# Errors:
-app("/not-found", "GET")        # NotFoundError
-app("/users/42", "POST")         # InvalidMethodError (route only accepts GET)
-```
-
-#### `@router.route(*paths, methods=None)` → decorator
-
-Register one or more routes. Decorator form is the primary way to bind targets.
-
-```python
-@app.route("/api/v1/users", "/api/v2/users")  # multiple paths, same target
-def list_users():
-    ...
-
-@app.route("/users", methods=["GET", "POST"])
-def handle_users():
-    ...
-
-# Shortcut: app.get, app.post, app.put, etc.
-@app.get("/users")
-def get_users(): ...
-
-@app.post("/users")
-def create_user(): ...
-```
-
-#### `router.bind(target, *paths, methods=None)` → list[Route]
-
-Low-level binding without the decorator. Returns created `Route` objects.
-
-```python
-routes = app.bind(handler, "/users", "/api/users", methods="GET")
-```
-
-#### `router.routes()` → list[Route]
-
-Get all registered routes (sorted by path). Useful for introspection or debugging.
-
-```python
-for route in app.routes():
-    print(route.path, route.methods)
-```
-
-#### `router.route(*paths)(subrouter)` — mount a nested router
-
-Bind this router as a nested (mounted) router on another router.
-
-```python
-api = Router()
-
-@api.route("/users")
-def list_users():
-    return ["users"]
-
-# Mount at "/api" under the main app:
-app.route("/api", methods="GET")(api)
-
-# Now app("/api/users", "GET") resolves to list_users
-```
-
-### Route Classes
-
-| Class | Description |
-|-------|-------------|
-| `Route` | Static path route (`/users`) |
-| `DynamicRoute` | Pattern route with params (`/users/{id}`) |
-| `PrefixedRoute` | Prefix-based match (`/api/*`) |
-| `Mount` | Nested router support (combines Prefix + sub-routes) |
-
-### Exceptions
-
-| Exception | When it's raised |
-|-----------|-----------------|
-| `NotFoundError` | Path has no matching route |
-| `InvalidMethodError` | Path matches but HTTP method is not allowed |
-| `RouterError` | Base class; also raised for invalid targets |
-
-```python
-from http_router import RouterError, NotFoundError, InvalidMethodError
-
-try:
-    app("/nonexistent", "GET")
-except NotFoundError as e:
-    ...
-```
-
-## Dynamic Routes (Path Parameters)
-
-Use `{name}` in paths to capture URL segments:
+Wrap a segment in `{...}` to capture it. Values are passed to the target as
+keyword arguments.
 
 ```python
 @app.route("/users/{id}")
@@ -159,58 +88,167 @@ def get_user(id):
 @app.route("/posts/{id}/comments")
 def get_comments(id):
     return [{"post_id": id}]
+```
 
-@app.route("/items/{id:int}")  # int: auto-cast to int
+### Converters
+
+Add a type after `:` to validate the segment and convert its value.
+
+| Converter | Example | Result |
+|-----------|---------|--------|
+| `str` (default) | `/users/{id}` | `"42"` |
+| `int` | `/items/{id:int}` | `42` |
+| `float` | `/price/{amount:float}` | `4.2` |
+| `path` | `/files/{name:path}` | `"a/b/c"` (matches `/`) |
+| `uuid` | `/u/{id:uuid}` | `UUID("...")` (case-insensitive) |
+
+```python
+@app.get("/items/{id:int}")
 def get_item(id):
     return {"id": id}  # id is already an int
 ```
 
-### Default Converters
+### Regex routes
 
-| Converter | Example Path | Description |
-|-----------|-------------|-------------|
-| `str` (default) | `/users/{id}` | Any string |
-| `int` | `/items/{id:int}` | Integer |
-| `float` | `/price/{amount:float}` | Float |
-| `path` | `/files/{filename:path}` | Path with slashes |
+Pass a compiled pattern to use your own regex. Only **named** groups become
+parameters, and the pattern matches a prefix of the path, like `re.match`.
 
-## Nested Routers (Mount)
+```python
+from re import compile as re
 
-Use `route()` to compose routers:
+@app.route(re(r"/orders/(?P<id>\d+)"))
+def get_order(id):
+    return {"id": id}
+```
+
+## HTTP methods
+
+Restrict a route to one or more methods with `methods=`. Methods are matched
+case-insensitively and stored uppercased.
+
+```python
+@app.route("/users", methods=["GET", "POST"])
+def users():
+    ...
+
+# Shorthand for a single method:
+@app.get("/health")
+def health(): ...
+
+@app.post("/users/{id}/ban")
+def ban_user(id): ...
+
+@app.put("/users/{id}")
+def update_user(id): ...
+```
+
+A route registered without `methods` accepts every method.
+
+## Nested routers
+
+Build small routers and mount them under a prefix. The mounted router sees the
+remaining path.
 
 ```python
 api = Router()
 
-@api.route("/users")
-def list_users(): ...
+@api.get("/users")
+def list_users():
+    return ["users"]
 
 @api.get("/users/{id}")
-def get_user(id): ...
+def get_user(id):
+    return {"id": id}
 
-# Mount api under "/api" on the main app:
-app.route("/api", methods="GET")(api)
+app = Router()
+app.route("/api")(api)   # mount under /api
 
-# Now these work:
-app("/api/users", "GET")          # → list_users
-app("/api/users/42", "GET")      # → get_user(id="42")
+app("/api/users", "GET")     # → list_users
+app("/api/users/42", "GET")  # → get_user(id="42")
 ```
 
-## Configuration Tips
+## Errors
 
-### Trim trailing slashes
+`app(...)` raises when it cannot resolve a request:
+
+```python
+from http_router import NotFoundError, InvalidMethodError
+
+app("/nonexistent")            # NotFoundError
+app("/users/42", "POST")       # InvalidMethodError (route only allows GET)
+```
+
+| Exception | When it is raised |
+|-----------|-------------------|
+| `NotFoundError` | No route matches the path |
+| `InvalidMethodError` | The path matches, but the method is not allowed |
+| `RouterError` | Base class; also raised for rejected targets |
+
+If you want to check without raising, call `app.match(path, method)` — it returns
+a falsy `RouteMatch` instead. Results are cached (1024 entries).
+
+## API reference
+
+### `Router(**kwargs)`
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `trim_last_slash` | `False` | Strip a trailing `/` before matching |
+| `validator` | `always_true` | Must return `True` to accept a target |
+| `converter` | `identity` | Transforms the target before binding |
+| `unquote_params` | `True` | URL-decode captured parameters |
 
 ```python
 app = Router(trim_last_slash=True)
-# "/users/" → matches "/users"
+
+# Reject targets that don't look like views:
+app = Router(validator=lambda target: hasattr(target, "handle"))
+
+# Wrap each bound target:
+app = Router(converter=lambda target: lambda request: target())
 ```
 
-### Custom validator / converter
+Set `unquote_params=False` when the path is already decoded (for example in an
+ASGI server).
+
+### Router methods
 
 ```python
-def is_callable(obj):
-    return callable(obj) and not obj.__module__ == "builtins"
+app(path, method="GET")                     # resolve, or raise RouterError
+app.match(path, method)                     # resolve, never raises (cached)
+app.route(*paths, methods=None, **opts)     # decorator / registrar
+app.bind(target, *paths, methods=None, **opts)  # bind without a decorator
+app.routes()                                # all routes, sorted by path
+```
 
-app = Router(validator=is_callable)
+Extra `opts` are passed to the target as keyword arguments:
+
+```python
+@app.route("/params", var="value")
+def params(**opts):
+    return opts
+```
+
+```python
+routes = app.bind(handler, "/users", "/api/users", methods="GET")
+```
+
+### Route classes
+
+| Class | Description |
+|-------|-------------|
+| `Route` | Static path route (`/users`) |
+| `DynamicRoute` | Pattern route with parameters (`/users/{id}`) |
+| `PrefixedRoute` | Matches any path with a given prefix |
+| `Mount` | A nested router mounted under a prefix |
+
+## Development
+
+```bash
+uv sync --all-extras   # install dependencies
+uv run pytest          # run the test suite
+uv run ruff check .    # lint
+uv run mypy            # type-check
 ```
 
 ## License
