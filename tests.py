@@ -85,6 +85,7 @@ def test_parse_path():
     assert parse_path("/") == ("/", None, {})
     assert parse_path("/test.jpg") == ("/test.jpg", None, {})
     assert parse_path("/{foo") == ("/{foo", None, {})
+    assert parse_path("/{a{") == ("/{a{", None, {})
 
     path, regex, params = parse_path(r"/{foo}/")
     assert isinstance(regex, Pattern)

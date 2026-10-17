@@ -38,7 +38,8 @@ def parse_path(path: TPath) -> tuple[str, Pattern | None, dict[str, Callable]]:
 
         if sym == "{":
             if group:
-                cur = src.find("}", cur) + 1
+                end = src.find("}", cur)
+                cur = end + 1 if end != -1 else len(src)
                 continue
 
             group = cur
