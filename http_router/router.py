@@ -5,7 +5,7 @@ from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
-from .utils import parse_path
+from .utils import always_true, identity, parse_path
 
 if TYPE_CHECKING:
     from .types import TMethodsArg, TPath, TVObj
@@ -33,8 +33,8 @@ class Router:
 
         """
         self.trim_last_slash = trim_last_slash
-        self.validator = validator or (lambda _: True)
-        self.converter = converter or (lambda v: v)
+        self.validator = validator or always_true
+        self.converter = converter or identity
         self.plain: defaultdict[str, list[Route]] = defaultdict(list)
         self.dynamic: list[Route] = []
 
@@ -51,6 +51,8 @@ class Router:
 
     def __getattr__(self, method: str) -> Callable:
         """Shortcut to the router methods."""
+        if method.startswith("__"):
+            raise AttributeError(method)
         return partial(self.route, methods=method)
 
     def __route__(

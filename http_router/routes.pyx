@@ -76,8 +76,7 @@ cdef class PrefixedRoute(Route):
 
     def __init__(self, str path, set methods, object target=None):
         path, pattern, _ = parse_path(path)
-        if pattern:
-            assert not pattern, "Prefix doesn't support patterns."
+        assert not pattern, "Prefix doesn't support patterns."
 
         super(PrefixedRoute, self).__init__(path.rstrip('/'), methods, target)
 

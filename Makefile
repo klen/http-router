@@ -41,7 +41,7 @@ clean:
 	find $(CURDIR) -name "*.orig" -delete
 	find $(CURDIR)/$(MODULE) -name "__pycache__" | xargs rm -rf
 
-LATEST_BENCHMARK = $(shell ls -t .benchmarks/* | head -1 | head -c4)
+LATEST_BENCHMARK = $(shell ls -t .benchmarks/*/*.json | head -1)
 test t: $(VIRTUAL_ENV)
 	$(VIRTUAL_ENV)/bin/pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
 

@@ -104,8 +104,7 @@ class PrefixedRoute(Route):
         self, path: str, methods: TMethods | None = None, target: Any = None,
     ):
         path, pattern, _ = parse_path(path)
-        if pattern:
-            assert not pattern, "Prefix doesn't support patterns."
+        assert not pattern, "Prefix doesn't support patterns."
 
         super(PrefixedRoute, self).__init__(path.rstrip("/"), methods, target)
 

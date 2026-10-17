@@ -3,7 +3,7 @@ from functools import lru_cache, partial
 from typing import Any, Callable, ClassVar, DefaultDict, List, Optional, Type, Union
 
 from .types import TMethodsArg, TPath, TVObj
-from .utils import parse_path
+from .utils import always_true, identity, parse_path
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
 
 
@@ -22,8 +22,8 @@ cdef class Router:
     ):
         """Initialize the router."""
         self.trim_last_slash = trim_last_slash
-        self.validator = validator or (lambda v: True)
-        self.converter = converter or (lambda v: v)
+        self.validator = validator or always_true
+        self.converter = converter or identity
         self.plain: Dict[str, List[Route]] = {}
         self.dynamic: List[Route] = []
 
@@ -136,6 +136,8 @@ cdef class Router:
 
     def __getattr__(self, method: str) -> Callable:
         """Shortcut to the router methods."""
+        if method.startswith('__'):
+            raise AttributeError(method)
         return partial(self.route, methods=method)
 
 

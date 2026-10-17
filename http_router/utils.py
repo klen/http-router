@@ -14,6 +14,11 @@ def identity(v: TVObj) -> TVObj:
     return v
 
 
+def always_true(_: TVObj) -> bool:
+    """Validator accepting any target."""
+    return True
+
+
 VAR_RE = re.compile(r"^(?P<var>[a-zA-Z][_a-zA-Z0-9]*)(?::(?P<var_type>.+))?$")
 VAR_TYPES = {
     "float": (r"\d+(\.\d+)?", float),

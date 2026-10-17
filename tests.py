@@ -359,6 +359,19 @@ def test_converter():
     assert match.target("test") == ("test", "simple")
 
 
+def test_router_copy_pickle():
+    import copy
+    import pickle
+
+    from http_router import Router
+
+    router = Router()
+    router.route("/x")("hello")
+
+    for clone in (copy.copy(router), copy.deepcopy(router), pickle.loads(pickle.dumps(router))):
+        assert clone("/x").target == "hello"
+
+
 def test_custom_route():
     from http_router import Router
 
@@ -404,20 +417,6 @@ def test_nested_routers():
 
     match = root("/child/url", "PATCH")
     assert match.target == "child_url"
-
-
-def test_readme():
-    from http_router import Router
-
-    router = Router(trim_last_slash=True)
-
-    @router.route("/simple")
-    def simple():
-        return "simple"
-
-    match = router("/simple")
-    assert match.target() == "simple"
-    assert match.params is None
 
 
 def test_method_case_insensitive():
@@ -488,4 +487,4 @@ def test_readme_examples():
     assert match.params == {"item": "12"}
 
 
-# ruff: noqa: FBT003, S311
+# ruff: noqa: FBT003, S301, S311
