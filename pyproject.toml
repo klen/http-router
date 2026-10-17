@@ -34,13 +34,13 @@ documentation = "https://github.com/klen/http-router"
 
 [project.optional-dependencies]
 tests = ["ruff", "pytest", "pytest-benchmark", "pytest-mypy; implementation_name == 'cpython'"]
-dev = ["bump2version", "pre-commit", "cython"]
+dev = ["bump2version", "pre-commit", "cython", "setuptools", "wheel"]
 
 [tool.setuptools]
 packages = ['http_router']
 
 [tool.setuptools.package-data]
-http_router = ["py.typed", "router.pxd", "router.pyx", "routes.pxd", "routes.pyx"]
+http_router = ["py.typed", "router.pxd", "routes.pxd"]
 
 [tool.pytest.ini_options]
 addopts = "-xsv"
@@ -66,3 +66,6 @@ exclude = [".venv", "docs", "examples"]
 select = ["ALL"]
 ignore = ["D", "UP", "ANN", "CPY001", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
 isort.required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.per-file-ignores]
+"setup.py" = ["T201"]

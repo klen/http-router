@@ -1,5 +1,7 @@
 """Setup the library."""
 
+from __future__ import annotations
+
 import os
 import sys
 
@@ -25,5 +27,5 @@ setup(
     setup_requires=["wheel"],
     ext_modules=[]
     if NO_EXTENSIONS or cythonize is None
-    else cythonize("http_router/*.pyx", language_level=3),
+    else cythonize(["http_router/router.py", "http_router/routes.py"], language_level=3),
 )

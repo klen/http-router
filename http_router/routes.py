@@ -8,7 +8,7 @@ from .router import Router
 from .utils import identity, parse_path
 
 if TYPE_CHECKING:
-    from .types import TMethods
+    from .types import TMethods, TPath
 
 
 class RouteMatch:
@@ -65,7 +65,7 @@ class Route:
         self.methods = methods
         self.target = target
 
-    def __lt__(self, route: "Route") -> bool:
+    def __lt__(self, route: Route) -> bool:
         """Sort routes by path (for __routes__ ordering)."""
         assert isinstance(route, Route), "Only routes are supported"
         return self.path < route.path
@@ -81,7 +81,7 @@ class Route:
         methods = self.methods
         return RouteMatch(
             path == self.path,
-            methods is None or (method in methods),
+            not methods or (method in methods),
             self.target,
         )
 
@@ -96,7 +96,7 @@ class DynamicRoute(Route):
     __slots__ = "methods", "params", "path", "pattern", "target"
 
     def __init__(
-        self, path: str, methods: TMethods | None = None, target: Any = None,
+        self, path: TPath, methods: TMethods | None = None, target: Any = None,
         pattern: Pattern | None = None, params: dict | None = None,
     ):
         """Create a dynamic route.
@@ -114,7 +114,7 @@ class DynamicRoute(Route):
             assert pattern, "Invalid path"
         self.pattern = pattern
         self.params = params or {}
-        super(DynamicRoute, self).__init__(path, methods, target)
+        super(DynamicRoute, self).__init__(path, methods, target)  # type: ignore[arg-type]
 
     def match(self, path: str, method: str) -> RouteMatch:
         """Check if this route matches using its regex pattern.

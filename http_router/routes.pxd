@@ -13,7 +13,7 @@ cdef class RouteMatch:
 cdef class Route:
 
     cdef readonly str path
-    cdef readonly set methods
+    cdef readonly object methods
     cdef readonly object target
 
     cpdef RouteMatch match(self, str path, str method)

@@ -140,6 +140,7 @@ def test_route():
 
     route = Route("/only-post", set(), None)
     assert not route.methods
+    assert route.match("/only-post", "GET").method  # empty methods == any method
 
 
 def test_dynamic_route():

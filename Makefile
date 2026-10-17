@@ -23,7 +23,7 @@ clean:
 	find . -name "*.orig" -delete
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 
-$(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
+$(PACKAGE)/%.c: $(PACKAGE)/%.py $(PACKAGE)/%.pxd
 	uv run cython -a $<
 
 cyt: $(PACKAGE)/router.c $(PACKAGE)/routes.c
