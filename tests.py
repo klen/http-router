@@ -1,21 +1,30 @@
 """HTTP Router tests."""
 from __future__ import annotations
 
+import copy
+import importlib
 import inspect
+import pickle
+import random
+import shutil
+import string
+import sys
 from contextlib import suppress
+from pathlib import Path
 from re import compile as re
-from typing import TYPE_CHECKING, Pattern
+from typing import Pattern
+from uuid import UUID, uuid4
 
 import pytest
 
-if TYPE_CHECKING:
-    from http_router import Router
+import http_router
+from http_router import Router
+from http_router.routes import DynamicRoute, Mount, Route
+from http_router.utils import parse_path
 
 
 @pytest.fixture
-def router() -> "Router":
-    from http_router import Router
-
+def router() -> Router:
     return Router()
 
 
@@ -80,9 +89,7 @@ def test_router_route_str(router):
 
 
 def test_uuid_case_insensitive():
-    from uuid import UUID, uuid4
 
-    from http_router import Router
 
     router = Router()
     router.route("/u/{id:uuid}")(None)
@@ -92,7 +99,6 @@ def test_uuid_case_insensitive():
 
 
 def test_parse_path():
-    from http_router.utils import parse_path
 
     assert parse_path("/") == ("/", None, {})
     assert parse_path("/test.jpg") == ("/test.jpg", None, {})
@@ -126,7 +132,6 @@ def test_parse_path():
 
 
 def test_route():
-    from http_router.routes import Route
 
     route = Route("/only-post", {"POST"}, None)
     assert route.methods
@@ -138,7 +143,6 @@ def test_route():
 
 
 def test_dynamic_route():
-    from http_router.routes import DynamicRoute
 
     route = DynamicRoute(r"/order/{id:int}", set(), None)
     match = route.match("/order/100", "")
@@ -158,7 +162,6 @@ def test_dynamic_route():
 
 
 def test_match_params_immutable():
-    from http_router import Router
 
     router = Router()
     router.route("/u/{id}")("u")
@@ -172,7 +175,6 @@ def test_match_params_immutable():
 
 def test_router():
     """Base tests."""
-    from http_router import Router
 
     router = Router(trim_last_slash=True)
 
@@ -230,8 +232,6 @@ def test_router():
 
 
 def test_mounts():
-    from http_router import Router
-    from http_router.routes import Mount
 
     router = Router()
     route = Mount("/api/", set(), router)
@@ -257,7 +257,6 @@ def test_mounts():
 
 
 def test_mount_fallthrough():
-    from http_router import Router
 
     root = Router()
     api_v2 = Router()
@@ -273,7 +272,6 @@ def test_mount_fallthrough():
 
 
 def test_mount_trim_last_slash():
-    from http_router import Router
 
     sub = Router(trim_last_slash=True)
     sub.route("/u")("u")
@@ -284,7 +282,6 @@ def test_mount_trim_last_slash():
 
 
 def test_mount_root_route():
-    from http_router import Router
 
     sub = Router()
     sub.route("/")("index")
@@ -296,7 +293,6 @@ def test_mount_root_route():
 
 
 def test_mount_methods_and_prefixes():
-    from http_router import Router
 
     sub = Router()
     sub.route("/u")("u")
@@ -311,7 +307,6 @@ def test_mount_methods_and_prefixes():
 
 
 def test_trim_last_slash():
-    from http_router import Router
 
     router = Router()
 
@@ -339,7 +334,6 @@ def test_trim_last_slash():
 
 
 def test_validator():
-    from http_router import Router
 
     # The router only accepts async functions
     router = Router(validator=inspect.iscoroutinefunction)
@@ -349,7 +343,6 @@ def test_validator():
 
 
 def test_converter():
-    from http_router import Router
 
     # The router only accepts async functions
     router = Router(converter=lambda v: lambda r: (r, v))
@@ -360,10 +353,7 @@ def test_converter():
 
 
 def test_router_copy_pickle():
-    import copy
-    import pickle
 
-    from http_router import Router
 
     router = Router()
     router.route("/x")("hello")
@@ -373,7 +363,6 @@ def test_router_copy_pickle():
 
 
 def test_custom_route():
-    from http_router import Router
 
     router = Router()
 
@@ -396,7 +385,6 @@ def test_custom_route():
 
 
 def test_nested_routers():
-    from http_router import Router
 
     child = Router()
     child.route("/url", methods="PATCH")("child_url")
@@ -420,7 +408,6 @@ def test_nested_routers():
 
 
 def test_method_case_insensitive():
-    from http_router import Router
 
     router = Router()
     router.route("/x", methods="post")("x")
@@ -443,8 +430,6 @@ def test_method_shortcuts(router):
 
 
 def test_benchmark(router, benchmark):
-    import random
-    import string
 
     chars = string.ascii_letters + string.digits
     randpath = lambda: "".join(random.choices(chars, k=10))  # noqa: E731
@@ -462,6 +447,7 @@ def test_benchmark(router, benchmark):
     paths = [route.format(item=randpath()) for route in routes]
 
     def do_work():
+        router.match.cache_clear()
         for path in paths:
             with suppress(router.InvalidMethodError):
                 assert router(path)
@@ -470,7 +456,6 @@ def test_benchmark(router, benchmark):
 
 
 def test_readme_examples():
-    from http_router import Router
 
     subrouter = Router()
 
@@ -485,6 +470,58 @@ def test_readme_examples():
     assert match, "HTTP path is ok"
     assert match.target is items
     assert match.params == {"item": "12"}
+
+
+def test_implementations_parity(tmp_path):
+    pkg = Path(http_router.__file__).parent
+    dest = tmp_path / "http_router_pure"
+    dest.mkdir()
+    for name in ("__init__.py", "types.py", "exceptions.py", "utils.py", "router.py", "routes.py"):
+        shutil.copy(pkg / name, dest / name)
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        pure = importlib.import_module("http_router_pure")
+    finally:
+        sys.path.pop(0)
+
+    def run(impl):
+        router = impl.Router(trim_last_slash=True)
+        router.route("/simple")("simple")
+        router.route("/orders/{id:int}", methods="post")("order")
+        router.route("/hello/{name:str}")("hello")
+
+        sub = impl.Router()
+        sub.route("/")("index")
+        sub.route("/items/{item}")("item")
+        router.route("/api")(sub)
+
+        def call(path, method):
+            try:
+                match = router(path, method)
+            except router.RouterError as exc:
+                return (type(exc).__name__,)
+            params = dict(match.params) if match.params is not None else None
+            return ("ok", match.target, params)
+
+        return [
+            call(path, method)
+            for path, method in (
+                ("/simple", "GET"),
+                ("/simple/", "GET"),
+                ("/orders/42", "POST"),
+                ("/orders/42", "post"),
+                ("/orders/42", "GET"),
+                ("/orders/nope", "POST"),
+                ("/hello/john/", "POST"),
+                ("/api", "GET"),
+                ("/api/", "GET"),
+                ("/api/items/12", "GET"),
+                ("/unknown", "GET"),
+            )
+        ]
+
+    assert run(http_router) == run(pure)
 
 
 # ruff: noqa: FBT003, S301, S311

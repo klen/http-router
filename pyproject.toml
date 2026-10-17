@@ -81,6 +81,3 @@ exclude = [".venv", "docs", "examples"]
 select = ["ALL"]
 ignore = ["D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
 isort.required-imports = ["from __future__ import annotations"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests.py" = ["PLC0415"]
