@@ -44,6 +44,17 @@ include-package-data = false
 [tool.setuptools.package-data]
 http_router = ["py.typed", "router.pxd", "routes.pxd"]
 
+[tool.bumpversion]
+current_version = "7.0.0"
+commit = false
+tag = false
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = '(?m)^version = "{current_version}"$'
+replace = 'version = "{new_version}"'
+regex = true
+
 [tool.pytest.ini_options]
 addopts = "-xsv"
 testpaths = "tests"
