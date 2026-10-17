@@ -231,6 +231,22 @@ def test_mounts():
     assert root("/api/test").target == 3
 
 
+def test_mount_fallthrough():
+    from http_router import Router
+
+    root = Router()
+    api_v2 = Router()
+    api_v2.route("/x")("v2")
+    root.route("/api/v2")(api_v2)
+
+    api = Router()
+    api.route("/x")("v1")
+    root.route("/api")(api)
+
+    assert root("/api/x").target == "v1"
+    assert root("/api/v2/x").target == "v2"
+
+
 def test_trim_last_slash():
     from http_router import Router
 

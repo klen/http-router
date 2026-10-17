@@ -98,7 +98,11 @@ cdef class Mount(PrefixedRoute):
     cpdef RouteMatch match(self, str path, str method):
         """Is the route match the path."""
         cdef RouteMatch match = super(Mount, self).match(path, method)
+        cdef RouteMatch child
         if match.path and match.method:
-            return self.target(path[len(self.path):], method)
+            child = self.target(path[len(self.path):], method)
+            if child is None:
+                return RouteMatch(False, False)
+            return child
 
         return match

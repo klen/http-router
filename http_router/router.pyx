@@ -34,7 +34,7 @@ cdef class Router:
 
         match = self.match(path, method)
 
-        if match is None:
+        if not match.path:
             raise self.NotFoundError(path, method)
 
         if not match.method:
@@ -58,11 +58,13 @@ cdef class Router:
 
         for route in routes:
             match = route.match(path, method)
-            if match.path:
+            if match is not None and match.path:
                 if match.method:
                     return match
                 neighbor = match
 
+        if neighbor is None:
+            return RouteMatch(False, False)
         return neighbor
 
     def bind(self, target: Any, *paths: TPath, methods: Optional[TMethodsArg] = None, **opts):
