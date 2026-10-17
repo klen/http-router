@@ -14,13 +14,13 @@ request object, no magic.
 ```python
 from http_router import Router
 
-app = Router()
+router = Router()
 
-@app.get("/users/{id}")
+@router.get("/users/{id}")
 def get_user(id):
     return {"id": id}
 
-match = app("/users/42", "GET")
+match = router("/users/42", "GET")
 match.target(**match.params)  # {"id": "42"}
 ```
 
@@ -28,7 +28,7 @@ match.target(**match.params)  # {"id": "42"}
 
 - Static (`/users`), dynamic (`/users/{id}`) and regex routes.
 - Typed path parameters: `str`, `int`, `float`, `path`, `uuid`.
-- Any HTTP method, with shortcuts like `app.get` and `app.post`.
+- Any HTTP method, with shortcuts like `router.get` and `router.post`.
 - Compose applications from nested routers.
 - Optional Cython acceleration, with a pure-Python fallback.
 - Python 3.10+ (tested on 3.10–3.15 and PyPy).
@@ -44,27 +44,27 @@ pip install http-router
 ```python
 from http_router import Router
 
-app = Router()
+router = Router()
 
-@app.get("/health")
+@router.get("/health")
 def health():
     return "ok"
 
-@app.get("/users/{id}")
+@router.get("/users/{id}")
 def get_user(id):
     return {"id": id}
 
-@app.post("/users")
+@router.post("/users")
 def create_user():
     return {"created": True}
 
-result = app("/users/42", method="GET")
+result = router("/users/42", method="GET")
 print(result)          # <RouteMatch path:True method:True - ...>
 print(result.target)   # <function get_user>
 print(result.params)   # {'id': '42'}
 ```
 
-`app(...)` returns a `RouteMatch`:
+`router(...)` returns a `RouteMatch`:
 
 | Attribute | Meaning |
 |-----------|---------|
@@ -81,11 +81,11 @@ Wrap a segment in `{...}` to capture it. Values are passed to the target as
 keyword arguments.
 
 ```python
-@app.route("/users/{id}")
+@router.route("/users/{id}")
 def get_user(id):
     return {"user_id": id}
 
-@app.route("/posts/{id}/comments")
+@router.route("/posts/{id}/comments")
 def get_comments(id):
     return [{"post_id": id}]
 ```
@@ -103,7 +103,7 @@ Add a type after `:` to validate the segment and convert its value.
 | `uuid` | `/u/{id:uuid}` | `UUID("...")` (case-insensitive) |
 
 ```python
-@app.get("/items/{id:int}")
+@router.get("/items/{id:int}")
 def get_item(id):
     return {"id": id}  # id is already an int
 ```
@@ -116,7 +116,7 @@ parameters, and the pattern matches a prefix of the path, like `re.match`.
 ```python
 from re import compile as re
 
-@app.route(re(r"/orders/(?P<id>\d+)"))
+@router.route(re(r"/orders/(?P<id>\d+)"))
 def get_order(id):
     return {"id": id}
 ```
@@ -127,18 +127,18 @@ Restrict a route to one or more methods with `methods=`. Methods are matched
 case-insensitively and stored uppercased.
 
 ```python
-@app.route("/users", methods=["GET", "POST"])
+@router.route("/users", methods=["GET", "POST"])
 def users():
     ...
 
 # Shorthand for a single method:
-@app.get("/health")
+@router.get("/health")
 def health(): ...
 
-@app.post("/users/{id}/ban")
+@router.post("/users/{id}/ban")
 def ban_user(id): ...
 
-@app.put("/users/{id}")
+@router.put("/users/{id}")
 def update_user(id): ...
 ```
 
@@ -160,22 +160,80 @@ def list_users():
 def get_user(id):
     return {"id": id}
 
-app = Router()
-app.route("/api")(api)   # mount under /api
+router = Router()
+router.route("/api")(api)   # mount under /api
 
-app("/api/users", "GET")     # → list_users
-app("/api/users/42", "GET")  # → get_user(id="42")
+router("/api/users", "GET")     # → list_users
+router("/api/users/42", "GET")  # → get_user(id="42")
+```
+
+## ASGI application
+
+The router is not tied to any framework, so an ASGI app is a thin wrapper
+around a lookup and a call. Targets may be async.
+
+```python
+import json
+
+from http_router import InvalidMethodError, NotFoundError, Router
+
+router = Router(unquote_params=False)  # ASGI paths are already decoded
+
+
+@router.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+@router.route("/users", methods=["GET", "POST"])
+async def users():
+    return {"users": []}
+
+
+@router.get("/users/{id:int}")
+async def get_user(id):
+    return {"id": id}
+
+
+async def asgi(scope, receive, send):
+    if scope["type"] != "http":
+        return
+
+    try:
+        match = router(scope["path"], scope["method"])
+    except NotFoundError:
+        return await respond(send, 404, {"error": "not found"})
+    except InvalidMethodError:
+        return await respond(send, 405, {"error": "method not allowed"})
+
+    await respond(send, 200, await match.target(**(match.params or {})))
+
+
+async def respond(send, status, data):
+    body = json.dumps(data).encode()
+    await send({
+        "type": "http.response.start",
+        "status": status,
+        "headers": [(b"content-type", b"application/json")],
+    })
+    await send({"type": "http.response.body", "body": body})
+```
+
+Serve it with any ASGI server:
+
+```bash
+uvicorn app:asgi
 ```
 
 ## Errors
 
-`app(...)` raises when it cannot resolve a request:
+`router(...)` raises when it cannot resolve a request:
 
 ```python
 from http_router import NotFoundError, InvalidMethodError
 
-app("/nonexistent")            # NotFoundError
-app("/users/42", "POST")       # InvalidMethodError (route only allows GET)
+router("/nonexistent")            # NotFoundError
+router("/users/42", "POST")       # InvalidMethodError (route only allows GET)
 ```
 
 | Exception | When it is raised |
@@ -184,7 +242,7 @@ app("/users/42", "POST")       # InvalidMethodError (route only allows GET)
 | `InvalidMethodError` | The path matches, but the method is not allowed |
 | `RouterError` | Base class; also raised for rejected targets |
 
-If you want to check without raising, call `app.match(path, method)` — it returns
+If you want to check without raising, call `router.match(path, method)` — it returns
 a falsy `RouteMatch` instead. Results are cached (1024 entries).
 
 ## API reference
@@ -199,13 +257,13 @@ a falsy `RouteMatch` instead. Results are cached (1024 entries).
 | `unquote_params` | `True` | URL-decode captured parameters |
 
 ```python
-app = Router(trim_last_slash=True)
+router = Router(trim_last_slash=True)
 
 # Reject targets that don't look like views:
-app = Router(validator=lambda target: hasattr(target, "handle"))
+router = Router(validator=lambda target: hasattr(target, "handle"))
 
 # Wrap each bound target:
-app = Router(converter=lambda target: lambda request: target())
+router = Router(converter=lambda target: lambda request: target())
 ```
 
 Set `unquote_params=False` when the path is already decoded (for example in an
@@ -214,23 +272,23 @@ ASGI server).
 ### Router methods
 
 ```python
-app(path, method="GET")                     # resolve, or raise RouterError
-app.match(path, method)                     # resolve, never raises (cached)
-app.route(*paths, methods=None, **opts)     # decorator / registrar
-app.bind(target, *paths, methods=None, **opts)  # bind without a decorator
-app.routes()                                # all routes, sorted by path
+router(path, method="GET")                     # resolve, or raise RouterError
+router.match(path, method)                     # resolve, never raises (cached)
+router.route(*paths, methods=None, **opts)     # decorator / registrar
+router.bind(target, *paths, methods=None, **opts)  # bind without a decorator
+router.routes()                                # all routes, sorted by path
 ```
 
 Extra `opts` are passed to the target as keyword arguments:
 
 ```python
-@app.route("/params", var="value")
+@router.route("/params", var="value")
 def params(**opts):
     return opts
 ```
 
 ```python
-routes = app.bind(handler, "/users", "/api/users", methods="GET")
+routes = router.bind(handler, "/users", "/api/users", methods="GET")
 ```
 
 ### Route classes

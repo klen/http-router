@@ -20,17 +20,17 @@ class Router:
 
     Example::
 
-        app = Router(trim_last_slash=True)
+        router = Router(trim_last_slash=True)
 
-        @app.get("/health")
+        @router.get("/health")
         def health():
             return "ok"
 
-        @app.route("/users/{id}")
+        @router.route("/users/{id}")
         def get_user(id):
             return {"user_id": id}
 
-        result = app("/users/42", method="GET")
+        result = router("/users/42", method="GET")
     """
 
     NotFoundError: ClassVar[type[Exception]] = NotFoundError
@@ -58,7 +58,7 @@ class Router:
 
         Example::
 
-            app = Router(validator=lambda obj: hasattr(obj, "handle"))
+            router = Router(validator=lambda obj: hasattr(obj, "handle"))
         """
         self.trim_last_slash = trim_last_slash
         self.validator = validator or always_true
@@ -78,7 +78,7 @@ class Router:
 
         Example::
 
-            result = app("/users/42", method="GET")
+            result = router("/users/42", method="GET")
             print(result.target)   # the bound handler
             print(result.params)   # {"id": "42"}
         """
@@ -94,7 +94,7 @@ class Router:
     def __getattr__(self, method: str) -> Callable:
         """Shortcut to ``route()`` with a single HTTP method.
 
-        Enable ``@app.get(...)``, ``@app.post(...)``, etc.
+        Enable ``@router.get(...)``, ``@router.post(...)``, etc.
         """
         if method.startswith("__"):
             raise AttributeError(method)
@@ -115,10 +115,10 @@ class Router:
             @api.route("/users")
             def list_users(): ...
 
-            # Mount api under "/api" on the main app:
-            app.route("/api", methods="GET")(api)
+            # Mount api under "/api" on the root router:
+            router.route("/api", methods="GET")(api)
 
-            # Now app("/api/users", "GET") → list_users
+            # Now router("/api/users", "GET") → list_users
         """
         if isinstance(methods, str):
             methods = [methods]
@@ -230,11 +230,11 @@ class Router:
 
         Example::
 
-            @app.route("/users", methods=["GET", "POST"])
+            @router.route("/users", methods=["GET", "POST"])
             def handle_users():
                 ...
 
-            @app.get("/users")  # shortcut for methods=["GET"]
+            @router.get("/users")  # shortcut for methods=["GET"]
             def list_users():
                 ...
 

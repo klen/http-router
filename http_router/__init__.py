@@ -6,17 +6,17 @@ Example::
 
     from http_router import Router
 
-    app = Router()
+    router = Router()
 
-    @app.get("/health")
+    @router.get("/health")
     def health():
         return "ok"
 
-    @app.route("/users/{id}")
+    @router.route("/users/{id}")
     def get_user(id):
         return {"id": id}
 
-    result = app("/users/42", method="GET")
+    result = router("/users/42", method="GET")
 """
 from __future__ import annotations
 
