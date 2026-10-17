@@ -1,19 +1,40 @@
-VIRTUAL_ENV 	?= env
-PACKAGE 	?= http_router
+PACKAGE ?= http_router
 
-all: $(VIRTUAL_ENV)
+.PHONY: all test t mypy ruff clean cyt compile version minor patch major
 
-$(VIRTUAL_ENV): pyproject.toml
-	@[ -d $(VIRTUAL_ENV) ] || python -m venv env
-	@$(VIRTUAL_ENV)/bin/pip install -e .[tests,dev]
-	@$(VIRTUAL_ENV)/bin/pre-commit install --hook-type pre-push
-	@touch $(VIRTUAL_ENV)
+all:
+	uv sync --all-extras
+	uv run pre-commit install --hook-type pre-push
 
-VERSION	?= minor
+LATEST_BENCHMARK = $(shell ls -t .benchmarks/*/*.json 2>/dev/null | head -1)
 
-.PHONY: version
-version: $(VIRTUAL_ENV)
-	bump2version $(VERSION)
+test t:
+	uv run pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
+
+mypy:
+	uv run mypy $(PACKAGE)
+
+ruff:
+	uv run ruff check $(PACKAGE)
+
+clean:
+	rm -rf build/ dist/ *.egg-info $(PACKAGE)/*.c $(PACKAGE)/*.so $(PACKAGE)/*.html
+	find . -name "*.py[co]" -delete
+	find . -name "*.orig" -delete
+	find . -type d -name __pycache__ -prune -exec rm -rf {} +
+
+$(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
+	uv run cython -a $<
+
+cyt: $(PACKAGE)/router.c $(PACKAGE)/routes.c
+
+compile: cyt
+	uv run python setup.py build_ext --inplace
+
+VERSION ?= minor
+
+version:
+	uv run bump2version $(VERSION)
 	git checkout master
 	git pull
 	git merge develop
@@ -21,40 +42,11 @@ version: $(VIRTUAL_ENV)
 	git push origin develop master
 	git push --tags
 
-.PHONY: minor
 minor:
 	make version VERSION=minor
 
-.PHONY: patch
 patch:
 	make version VERSION=patch
 
-.PHONY: major
 major:
 	make version VERSION=major
-
-.PHONY: clean
-# target: clean - Display callable targets
-clean:
-	rm -rf build/ dist/ docs/_build *.egg-info $(PACKAGE)/*.c $(PACKAGE)/*.so $(PACKAGE)/*.html
-	find $(CURDIR) -name "*.py[co]" -delete
-	find $(CURDIR) -name "*.orig" -delete
-	find $(CURDIR)/$(MODULE) -name "__pycache__" | xargs rm -rf
-
-LATEST_BENCHMARK = $(shell ls -t .benchmarks/*/*.json | head -1)
-test t: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
-
-mypy: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/mypy $(PACKAGE)
-
-ruff: $(VIRTUAL_ENV)
-	$(VIRTUAL_ENV)/bin/ruff check $(PACKAGE)
-
-$(PACKAGE)/%.c: $(PACKAGE)/%.pyx $(PACKAGE)/%.pxd
-	$(VIRTUAL_ENV)/bin/cython -a $<
-
-cyt: $(PACKAGE)/router.c $(PACKAGE)/routes.c
-
-compile: cyt
-	$(VIRTUAL_ENV)/bin/python setup.py build_ext --inplace

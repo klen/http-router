@@ -4,6 +4,10 @@ A simple, fast HTTP path router for Python.
 
 Find a target function by URL-path and HTTP-method — the way you'd expect it to work.
 
+## Requirements
+
+Python 3.10+ (tested on 3.10–3.15 and PyPy).
+
 ## Quick Start
 
 ```python
@@ -208,14 +212,6 @@ def is_callable(obj):
 
 app = Router(validator=is_callable)
 ```
-
-## Benchmarks (Pure Python)
-
-| Test | ~ms per request |
-|------|-----------------|
-| Static route match | 0.25 |
-| Dynamic route with 1 param | 0.38 |
-| 100 routes search | ~2.5 |
 
 ## License
 

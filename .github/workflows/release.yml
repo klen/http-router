@@ -16,11 +16,11 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Prepare to build
-        run: pip install build
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Build sdist
-        run: python -m build --sdist
+        run: uv build --sdist
         env:
           HTTP_ROUTER_NO_EXTENSIONS: "1"
 

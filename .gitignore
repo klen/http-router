@@ -1,10 +1,10 @@
 /.benchmarks
 /.eggs
 /.ignore
+/.venv
 /.vimrc
 /build
 /dist
-/env
 /http_router/*.c
 /http_router/*.html
 /http_router/*.so

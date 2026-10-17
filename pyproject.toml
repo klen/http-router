@@ -5,7 +5,7 @@ requires = ["setuptools", "wheel", "Cython"]
 name = "http-router"
 version = "6.0.0"
 description = "A simple router system for HTTP applications"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.10"
 license = { "text" = "MIT License" }
 authors = [{ name = "Kirill Klenov", email = "horneds@gmail.com" }]
@@ -21,6 +21,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Programming Language :: Python :: Implementation :: PyPy",
   "Programming Language :: Cython",
   "Topic :: Internet :: WWW/HTTP",
@@ -33,7 +34,7 @@ documentation = "https://github.com/klen/http-router"
 
 [project.optional-dependencies]
 tests = ["ruff", "pytest", "pytest-benchmark", "pytest-mypy; implementation_name == 'cpython'"]
-dev = ["bump2version", "tox", "pre-commit"]
+dev = ["bump2version", "pre-commit", "cython"]
 
 [tool.setuptools]
 packages = ['http_router']
@@ -51,22 +52,6 @@ ignore = "D"
 [tool.mypy]
 packages = ["http_router"]
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py310,py311,py312,py313,py314,pypy311
-
-[testenv]
-deps = -e .[tests]
-commands =
-	pytest --mypy
-
-[testenv:pypy310]
-deps = -e .[tests]
-commands =
-	pytest
-"""
-
 [tool.black]
 line-length = 100
 target-version = ["py310"]
@@ -79,5 +64,5 @@ exclude = [".venv", "docs", "examples"]
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D", "UP", "ANN", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
+ignore = ["D", "UP", "ANN", "CPY001", "DJ", "EM", "RSE", "SLF", "S101", "PLR2004"]
 isort.required-imports = ["from __future__ import annotations"]
