@@ -44,7 +44,7 @@ http_router = ["py.typed", "router.pxd", "routes.pxd"]
 
 [tool.pytest.ini_options]
 addopts = "-xsv"
-testpaths = "tests.py"
+testpaths = "tests"
 
 [tool.pylama]
 ignore = "D"

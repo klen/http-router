@@ -9,7 +9,7 @@ all:
 LATEST_BENCHMARK = $(shell ls -t .benchmarks/*/*.json 2>/dev/null | head -1)
 
 test t:
-	uv run pytest tests.py --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
+	uv run pytest tests --benchmark-autosave --benchmark-compare=$(LATEST_BENCHMARK)
 
 mypy:
 	uv run mypy $(PACKAGE)
