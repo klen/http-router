@@ -101,7 +101,7 @@ cdef class Mount(PrefixedRoute):
         cdef RouteMatch match = super(Mount, self).match(path, method)
         cdef RouteMatch child
         if match.path and match.method:
-            child = self.target(path[len(self.path):], method)
+            child = self.target(path[len(self.path):] or "/", method)
             if child is None:
                 return RouteMatch(False, False)
             return child

@@ -260,6 +260,44 @@ def test_mount_fallthrough():
     assert root("/api/v2/x").target == "v2"
 
 
+def test_mount_trim_last_slash():
+    from http_router import Router
+
+    sub = Router(trim_last_slash=True)
+    sub.route("/u")("u")
+    root = Router()
+    root.route("/api")(sub)
+
+    assert root("/api/u/").target == "u"
+
+
+def test_mount_root_route():
+    from http_router import Router
+
+    sub = Router()
+    sub.route("/")("index")
+    root = Router()
+    root.route("/api")(sub)
+
+    assert root("/api").target == "index"
+    assert root("/api/").target == "index"
+
+
+def test_mount_methods_and_prefixes():
+    from http_router import Router
+
+    sub = Router()
+    sub.route("/u")("u")
+    root = Router()
+    root.route("/a", "/b", methods="POST")(sub)
+
+    with pytest.raises(root.InvalidMethodError):
+        root("/a/u")
+
+    assert root("/a/u", "POST").target == "u"
+    assert root("/b/u", "POST").target == "u"
+
+
 def test_trim_last_slash():
     from http_router import Router
 

@@ -29,9 +29,6 @@ cdef class Router:
 
     def __call__(self, str path, str method="GET") -> 'RouteMatch':
         """Found a target for the given path and method."""
-        if self.trim_last_slash:
-            path = path.rstrip('/')
-
         match = self.match(path, method)
 
         if not match.path:
@@ -45,13 +42,24 @@ cdef class Router:
     def __route__(self, root: 'Router', prefix: str, *paths: Any,
                   methods: TMethodsArg = None, **params):
         """Bind self as a nested router."""
-        route = Mount(prefix, set(), router=self)
-        root.dynamic.insert(0, route)
+        if isinstance(methods, str):
+            methods = [methods]
+        if methods:
+            methods = set(m.upper() for m in methods)
+        else:
+            methods = set()
+
+        for path in (prefix,) + paths:
+            route = Mount(path, methods, router=self)
+            root.dynamic.insert(0, route)
         return self
 
     @lru_cache(maxsize=1024)
     def match(self, str path, str method) -> 'RouteMatch':
         """Search a matched target for the given path and method."""
+        if self.trim_last_slash:
+            path = path.rstrip('/')
+
         cdef list routes = self.plain.get(path, self.dynamic)
         cdef RouteMatch match, neighbor = None
         cdef Route route

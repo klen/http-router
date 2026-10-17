@@ -40,9 +40,6 @@ class Router:
 
     def __call__(self, path: str, method: str = "GET") -> RouteMatch:
         """Found a target for the given path and method."""
-        if self.trim_last_slash:
-            path = path.rstrip("/")
-
         match = self.match(path, method)
         if not match.path:
             raise self.NotFoundError(path, method)
@@ -56,15 +53,26 @@ class Router:
         """Shortcut to the router methods."""
         return partial(self.route, methods=method)
 
-    def __route__(self, root: Router, prefix: str, *_, **__) -> Router:
+    def __route__(
+        self, root: Router, prefix: str, *paths: str, methods: TMethodsArg | None = None, **__,
+    ) -> Router:
         """Bind self as a nested router."""
-        route = Mount(prefix, set(), router=self)
-        root.dynamic.insert(0, route)
+        if isinstance(methods, str):
+            methods = [methods]
+        if methods is not None:
+            methods = {m.upper() for m in methods}
+
+        for path in (prefix, *paths):
+            route = Mount(path, methods, router=self)
+            root.dynamic.insert(0, route)
         return self
 
     @lru_cache(maxsize=1024)  # noqa: B019
     def match(self, path: str, method: str) -> RouteMatch:
         """Search a matched target for the given path and method."""
+        if self.trim_last_slash:
+            path = path.rstrip("/")
+
         neighbour = None
         for route in self.plain.get(path, self.dynamic):
             match = route.match(path, method)

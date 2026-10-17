@@ -92,7 +92,7 @@ class DynamicRoute(Route):
                 {
                     key: self.params.get(key, identity)(unquote(value))
                     for key, value in match.groupdict().items()
-                }
+                },
             ),
         )
 
@@ -135,7 +135,7 @@ class Mount(PrefixedRoute):
         match: RouteMatch = super(Mount, self).match(path, method)
         if match:
             target = cast("Callable", self.target)
-            return target(path[len(self.path) :], method)
+            return target(path[len(self.path) :] or "/", method)
 
         return match
 
