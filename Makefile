@@ -31,22 +31,55 @@ cyt: $(PACKAGE)/router.c $(PACKAGE)/routes.c
 compile: cyt
 	uv run python setup.py build_ext --inplace
 
-VERSION ?= minor
+# ==============
+#  Bump version
+# ==============
 
-version:
-	uv run bump2version $(VERSION)
-	git checkout master
-	git pull
-	git merge develop
-	git checkout develop
-	git push origin develop master
-	git push --tags
+RELEASE	?= minor
+MANAGER	?= uv
 
-minor:
-	make version VERSION=minor
+.PHONY: release
+# target: release - Bump version
+release:
+	@echo "Starting release process (bumping $(RELEASE) version)..."
+	@git checkout main
+	@git pull
+	@git checkout develop
+	@git pull
+	@echo "Bumping version and creating release commit and tag..."
+	@uvx bump-my-version bump $(RELEASE)
+	@echo "Version bumped to `$(MANAGER) version --short`."
+	@$(MANAGER) lock
+	@echo "Committing version bump and creating tag..."
+	@VERSION=`$(MANAGER) version --short`; \
+		{ \
+			printf 'build(release): %s\n\n' "$$VERSION"; \
+			printf 'Changes:\n\n'; \
+			git log --oneline --pretty=format:'%s [%an]' main..develop | grep -Evi 'github|^Merge' || true; \
+		} | git commit -a -F -
+	@echo "Merging changes between branches..."
+	@git checkout main
+	@git merge --ff-only develop
+	@VERSION=`$(MANAGER) version --short`; \
+		git push origin main; \
+		git tag -a "$$VERSION" -m "$$VERSION"; \
+		git push origin "$$VERSION"
+	@git checkout develop
+	@git merge --ff-only main
+	@git push origin develop
+	@echo "Release process complete for `$(MANAGER) version --short`"
 
+.PHONY: minor
+minor: release
+
+.PHONY: patch
 patch:
-	make version VERSION=patch
+	make release RELEASE=patch
 
+.PHONY: major
 major:
-	make version VERSION=major
+	make release RELEASE=major
+
+version v:
+	uv version --short
+
