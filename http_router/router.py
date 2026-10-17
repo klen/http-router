@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from functools import lru_cache, partial
+from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
@@ -42,6 +43,7 @@ class Router:
         trim_last_slash: bool = False,
         validator: Callable[[Any], bool] | None = None,
         converter: Callable | None = None,
+        unquote_params: bool = True,
     ):
         """Initialize the router.
 
@@ -51,6 +53,8 @@ class Router:
             Default is always-accepting.
         :param converter: Transformer applied to targets before binding
             Default is identity (no-op).
+        :param unquote_params: Unquote captured path params after matching.
+            Set ``False`` when the path is already decoded (e.g. ASGI).
 
         Example::
 
@@ -59,6 +63,7 @@ class Router:
         self.trim_last_slash = trim_last_slash
         self.validator = validator or always_true
         self.converter = converter or identity
+        self.unquote_params = unquote_params
         self.plain: defaultdict[str, list[Route]] = defaultdict(list)
         self.dynamic: list[Route] = []
 
@@ -144,7 +149,7 @@ class Router:
             path = path.rstrip("/")
 
         neighbour = None
-        for route in self.plain.get(path, self.dynamic):
+        for route in chain(self.plain.get(path, ()), self.dynamic):
             match = route.match(path, method)
             if match.path:
                 if match.method:
@@ -196,6 +201,7 @@ class Router:
                     target=target,
                     pattern=pattern,
                     params=params,
+                    unquote=self.unquote_params,
                 )
                 self.dynamic.append(route)
 

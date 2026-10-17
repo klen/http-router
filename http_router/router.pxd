@@ -11,3 +11,4 @@ cdef class Router:
     cdef public bint trim_last_slash
     cdef public object validator
     cdef public object converter
+    cdef readonly bint unquote_params

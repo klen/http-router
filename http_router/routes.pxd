@@ -23,6 +23,7 @@ cdef class DynamicRoute(Route):
 
     cdef readonly object pattern
     cdef readonly dict params
+    cdef readonly bint unquote
 
 
 cdef class PrefixedRoute(Route):

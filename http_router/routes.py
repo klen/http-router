@@ -93,11 +93,13 @@ class DynamicRoute(Route):
     as keyword arguments on ``RouteMatch.params``.
     """
 
-    __slots__ = "methods", "params", "path", "pattern", "target"
+    __slots__ = "methods", "params", "path", "pattern", "target", "unquote"
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self, path: TPath, methods: TMethods | None = None, target: Any = None,
         pattern: Pattern | None = None, params: dict | None = None,
+        *,
+        unquote: bool = True,
     ):
         """Create a dynamic route.
 
@@ -106,6 +108,7 @@ class DynamicRoute(Route):
         :param target: Callable to invoke on match (or ``None``)
         :param pattern: Pre-compiled regex. If ``None``, parsed from ``path``.
         :param params: Parameter converters dict (e.g. ``{"id": int}``)
+        :param unquote: Unquote captured values after matching (default ``True``).
 
         Raises AssertionError if no pattern can be extracted when ``pattern=None``.
         """
@@ -114,6 +117,7 @@ class DynamicRoute(Route):
             assert pattern, "Invalid path"
         self.pattern = pattern
         self.params = params or {}
+        self.unquote = unquote
         super(DynamicRoute, self).__init__(path, methods, target)  # type: ignore[arg-type]
 
     def match(self, path: str, method: str) -> RouteMatch:
@@ -125,13 +129,14 @@ class DynamicRoute(Route):
         if not match:
             return RouteMatch(False, False)
 
+        decode = unquote if self.unquote else identity
         return RouteMatch(
             True,
             not self.methods or method in self.methods,
             self.target,
             MappingProxyType(
                 {
-                    key: self.params.get(key, identity)(unquote(value))
+                    key: self.params.get(key, identity)(decode(value))
                     for key, value in match.groupdict().items()
                 },
             ),

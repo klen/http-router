@@ -174,6 +174,28 @@ def test_match_params_immutable():
     assert router("/u/a").params == {"id": "a"}
 
 
+def test_plain_route_method_fallback():
+    router = Router()
+    router.route("/items/foo", methods="post")("foo")
+    router.route("/items/{item}")("item")
+
+    assert router("/items/foo", "POST").target == "foo"
+    assert router("/items/12", "GET").target == "item"
+    assert router("/items/foo", "GET").target == "item"
+
+
+def test_unquote_params():
+    path = "/files/100%25 off.txt"
+
+    router = Router(unquote_params=False)
+    router.route("/files/{name}")("file")
+    assert router(path).params == {"name": "100%25 off.txt"}
+
+    router = Router()
+    router.route("/files/{name}")("file")
+    assert router(path).params == {"name": "100% off.txt"}
+
+
 def test_router():
     """Base tests."""
 
