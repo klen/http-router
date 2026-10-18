@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Pattern, cast
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Pattern
 from urllib.parse import unquote
 
 from .router import Router
@@ -193,8 +193,8 @@ class Mount(PrefixedRoute):
     def match(self, path: str, method: str) -> RouteMatch:
         """Check prefix and delegate remaining path to the mounted router."""
         match: RouteMatch = super(Mount, self).match(path, method)
-        if match:
-            target = cast("Callable", self.target)
+        if match.path and match.method:
+            target: Callable = self.target
             return target(path[len(self.path):] or "/", method)
 
         return match

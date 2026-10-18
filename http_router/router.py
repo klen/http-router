@@ -82,7 +82,7 @@ class Router:
             print(result.target)   # the bound handler
             print(result.params)   # {"id": "42"}
         """
-        match = self.match(path, method)
+        match: RouteMatch = self.match(path, method)
         if not match.path:
             raise self.NotFoundError(path, method)
 
@@ -148,7 +148,9 @@ class Router:
         if self.trim_last_slash:
             path = path.rstrip("/")
 
-        neighbour = None
+        route: Route
+        match: RouteMatch
+        neighbour: RouteMatch | None = None
         for route in chain(self.plain.get(path, ()), self.dynamic):
             match = route.match(path, method)
             if match.path:
