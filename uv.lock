@@ -155,7 +155,7 @@ wheels = [
 
 [[package]]
 name = "http-router"
-version = "8.0.0"
+version = "10.0.0"
 source = { editable = "." }
 
 [package.optional-dependencies]
