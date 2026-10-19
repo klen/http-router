@@ -114,8 +114,8 @@ class Router:
         """Bind self as a nested (mounted) router on another ``Router``.
 
         :param root: Parent router to attach to
-        :param prefix: Mount point (e.g. ``"/api"``)
-        :param methods: Allowed HTTP methods for the mount prefix
+        :param prefix: Mount prefix (e.g. ``"/api"``)
+        :param methods: Allowed HTTP method(s) for the mount prefix. ``None`` means any method.
         :param hosts: Allowed host(s) for the mount prefix, compared verbatim.
             ``None`` means any host.
 
@@ -133,7 +133,7 @@ class Router:
         methods, hosts = prepare_route_params(methods, hosts)
 
         for path in (prefix, *paths):
-            route = Mount(path, methods, router=self, hosts=hosts)
+            route = Mount(path, methods=methods, hosts=hosts, router=self)
             root.dynamic.insert(0, route)
 
         return self
@@ -184,7 +184,7 @@ class Router:
 
         :param target: Callable or object to bind
         :param paths: One or more URL path strings/patterns
-        :param methods: Allowed HTTP method(s)
+        :param methods: Allowed HTTP method(s). ``None`` means any method.
         :param hosts: Allowed host(s), compared verbatim. ``None`` means any host.
         :param opts: Extra keyword arguments passed to target via ``partial``.
             ``methods`` and ``hosts`` are reserved, so they're never passed on.
@@ -218,7 +218,7 @@ class Router:
                 self.dynamic.append(route)
 
             else:
-                route = Route(path, methods, target, hosts=hosts)
+                route = Route(path, methods=methods, hosts=hosts, target=target)
                 self.plain[path].append(route)
 
             routes.append(route)
@@ -235,7 +235,8 @@ class Router:
         """Decorator to register a route with the router.
 
         :param paths: One or more URL path strings/patterns
-        :param methods: Allowed HTTP method(s) (e.g. ``["GET", "POST"]``)
+        :param methods: Allowed HTTP method(s) (e.g. ``["GET", "POST"]``).
+            ``None`` means any method.
         :param hosts: Allowed host(s), compared verbatim. ``None`` means any host.
         :param opts: Extra keyword arguments passed to target via ``partial``.
             ``methods`` and ``hosts`` are reserved, so they're never passed on.

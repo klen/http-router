@@ -295,7 +295,7 @@ ASGI server).
 
 ```python
 router(path, method="GET", host=None)          # resolve, or raise RouterError
-router.match(path, method, host=None)          # resolve, never raises (cached)
+router.match(path, method, host)               # resolve, never raises (cached)
 router.route(*paths, methods=None, hosts=None, **opts)     # decorator / registrar
 router.bind(target, *paths, methods=None, hosts=None, **opts)  # bind without a decorator
 router.routes()                                # all routes, sorted by path

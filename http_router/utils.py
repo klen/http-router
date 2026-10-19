@@ -80,14 +80,12 @@ def prepare_route_params(
     hosts: THostsArg | None,
 ) -> tuple[TMethods | None, THosts | None]:
     if isinstance(methods, str):
-        methods = [methods]
-
-    if methods is not None:
+        methods = {methods.upper()}
+    elif methods is not None:
         methods = {m.upper() for m in methods}
 
     if isinstance(hosts, str):
         hosts = {hosts}
-
     elif hosts is not None:
         hosts = set(hosts)
 
