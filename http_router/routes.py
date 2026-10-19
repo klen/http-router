@@ -8,7 +8,7 @@ from .router import Router
 from .utils import identity, parse_path
 
 if TYPE_CHECKING:
-    from .types import TMethods, TPath
+    from .types import THosts, TMethods, TPath
 
 
 class RouteMatch:
@@ -50,19 +50,22 @@ class Route:
     Matches an exact path string against the request path and HTTP method.
     """
 
-    __slots__ = "methods", "path", "target"
+    __slots__ = "hosts", "methods", "path", "target"
 
     def __init__(
         self, path: str, methods: TMethods | None = None, target: Any = None,
+        *, hosts: THosts | None = None,
     ):
         """Create a static route.
 
         :param path: Exact URL path (e.g. ``"/users"``)
         :param methods: Allowed HTTP method(s). ``None`` means any method.
+        :param hosts: Allowed host(s), compared verbatim. ``None`` means any host.
         :param target: Callable to invoke on match (or ``None``)
         """
         self.path = path
         self.methods = methods
+        self.hosts = hosts
         self.target = target
 
     def __lt__(self, route: Route) -> bool:
@@ -70,17 +73,19 @@ class Route:
         assert isinstance(route, Route), "Only routes are supported"
         return self.path < route.path
 
-    def match(self, path: str, method: str) -> RouteMatch:
-        """Check if this route matches the given path and method.
+    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+        """Check if this route matches the given path, method and host.
 
         :param path: Request URL path
         :param method: HTTP method string (e.g. ``"GET"``)
+        :param host: Request host, compared verbatim, or ``None``. A route with
+            ``hosts`` doesn't match a host it doesn't list, as if its path hadn't matched.
 
         Returns a ``RouteMatch`` with the appropriate flags set.
         """
         methods = self.methods
         return RouteMatch(
-            path == self.path,
+            path == self.path and (not self.hosts or host in self.hosts),
             not methods or (method in methods),
             self.target,
         )
@@ -93,18 +98,20 @@ class DynamicRoute(Route):
     as keyword arguments on ``RouteMatch.params``.
     """
 
-    __slots__ = "methods", "params", "path", "pattern", "target", "unquote"
+    __slots__ = "hosts", "methods", "params", "path", "pattern", "target", "unquote"
 
     def __init__(  # noqa: PLR0913
         self, path: TPath, methods: TMethods | None = None, target: Any = None,
         pattern: Pattern | None = None, params: dict | None = None,
         *,
+        hosts: THosts | None = None,
         unquote: bool = True,
     ):
         """Create a dynamic route.
 
         :param path: URL pattern string (e.g. ``"/users/{id}"``)
         :param methods: Allowed HTTP method(s). ``None`` means any method.
+        :param hosts: Allowed host(s), compared verbatim. ``None`` means any host.
         :param target: Callable to invoke on match (or ``None``)
         :param pattern: Pre-compiled regex. If ``None``, parsed from ``path``.
         :param params: Parameter converters dict (e.g. ``{"id": int}``)
@@ -118,15 +125,15 @@ class DynamicRoute(Route):
         self.pattern = pattern
         self.params = params or {}
         self.unquote = unquote
-        super(DynamicRoute, self).__init__(path, methods, target)  # type: ignore[arg-type]
+        super(DynamicRoute, self).__init__(path, methods, target, hosts=hosts)  # type: ignore[arg-type]
 
-    def match(self, path: str, method: str) -> RouteMatch:
+    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
         """Check if this route matches using its regex pattern.
 
         Extracts captured URL segments into ``params`` on success.
         """
         match = self.pattern.match(path)
-        if not match:
+        if not (match and (not self.hosts or host in self.hosts)):
             return RouteMatch(False, False)
 
         decode = unquote if self.unquote else identity
@@ -150,23 +157,25 @@ class PrefixedRoute(Route):
     """
 
     def __init__(self, path: str, methods: TMethods | None = None, target: Any = None,
+        *, hosts: THosts | None = None,
     ):
         """Create a prefix-based route.
 
         :param path: Prefix to match (e.g. ``"/api"``)
         :param methods: Allowed HTTP method(s). ``None`` means any method.
+        :param hosts: Allowed host(s), compared verbatim. ``None`` means any host.
         :param target: Callable to invoke on match (usually a sub-router)
         """
         path, pattern, _ = parse_path(path)
         assert not pattern, "Prefix doesn't support patterns."
 
-        super(PrefixedRoute, self).__init__(path.rstrip("/"), methods, target)
+        super(PrefixedRoute, self).__init__(path.rstrip("/"), methods, target, hosts=hosts)
 
-    def match(self, path: str, method: str) -> RouteMatch:
+    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
         """Check if the request path starts with this prefix."""
         methods = self.methods
         return RouteMatch(
-            path.startswith(self.path),
+            path.startswith(self.path) and (not self.hosts or host in self.hosts),
             not methods or (method in methods),
             self.target,
         )
@@ -180,22 +189,24 @@ class Mount(PrefixedRoute):
     """
 
     def __init__(self, path: str, methods: TMethods | None = None, router: Router | None = None,
+        *, hosts: THosts | None = None,
     ):
         """Create a mount point for a nested router.
 
         :param path: Mount prefix (e.g. ``"/api"``)
         :param methods: Allowed HTTP method(s). ``None`` means any method.
+        :param hosts: Allowed host(s), compared verbatim. ``None`` means any host.
         :param router: The nested Router instance to delegate to. Defaults to a new empty Router.
         """
         router = router or Router()
-        super(Mount, self).__init__(path, methods, router.match)
+        super(Mount, self).__init__(path, methods, router.match, hosts=hosts)
 
-    def match(self, path: str, method: str) -> RouteMatch:
+    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
         """Check prefix and delegate remaining path to the mounted router."""
-        match: RouteMatch = super(Mount, self).match(path, method)
+        match: RouteMatch = super(Mount, self).match(path, method, host)
         if match.path and match.method:
             target: Callable = self.target
-            return target(path[len(self.path):] or "/", method)
+            return target(path[len(self.path):] or "/", method, host)
 
         return match
 

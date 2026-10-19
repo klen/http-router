@@ -37,23 +37,25 @@ def test_implementations_parity(pure_http_router):
         router.route("/simple")("simple")
         router.route("/orders/{id:int}", methods="post")("order")
         router.route("/hello/{name:str}")("hello")
+        router.route("/admin", hosts="admin.example.com")("admin")
 
         sub = impl.Router()
         sub.route("/")("index")
         sub.route("/items/{item}")("item")
+        sub.route("/users", hosts="a.example.com")("users")
         router.route("/api")(sub)
 
-        def call(path, method):
+        def call(path, method, host=None):
             try:
-                match = router(path, method)
+                match = router(path, method, host)
             except router.RouterError as exc:
                 return (type(exc).__name__,)
             params = dict(match.params) if match.params is not None else None
             return ("ok", match.target, params)
 
         return [
-            call(path, method)
-            for path, method in (
+            call(path, method, *host)
+            for path, method, *host in (
                 ("/simple", "GET"),
                 ("/simple/", "GET"),
                 ("/orders/42", "POST"),
@@ -65,6 +67,11 @@ def test_implementations_parity(pure_http_router):
                 ("/api/", "GET"),
                 ("/api/items/12", "GET"),
                 ("/unknown", "GET"),
+                ("/admin", "GET", "admin.example.com"),
+                ("/admin", "GET", "www.example.com"),
+                ("/admin", "GET"),
+                ("/api/users", "GET", "a.example.com"),
+                ("/api/users", "GET", "b.example.com"),
             )
         ]
 
