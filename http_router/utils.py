@@ -7,7 +7,8 @@ from uuid import UUID
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from .types import TPath, TVObj
+    from .types import THosts, THostsArg, TMethods, TMethodsArg, TPath, TVObj
+
 
 def identity(v: TVObj) -> TVObj:
     """Identity function."""
@@ -57,12 +58,10 @@ def parse_path(path: TPath) -> tuple[str, Pattern | None, dict[str, Callable]]:
             if match:
                 opts = match.groupdict("str")
                 var_type_re, params[opts["var"]] = VAR_TYPES.get(
-                    opts["var_type"], (opts["var_type"], identity),
+                    opts["var_type"],
+                    (opts["var_type"], identity),
                 )
-                regex += (
-                    re.escape(src[idx : group - 1])
-                    + f"(?P<{ opts['var'] }>{ var_type_re })"
-                )
+                regex += re.escape(src[idx : group - 1]) + f"(?P<{opts['var']}>{var_type_re})"
                 path += src[idx : group - 1] + f"{{{opts['var']}}}"
                 cur = idx = group + length + 1
 
@@ -74,3 +73,22 @@ def parse_path(path: TPath) -> tuple[str, Pattern | None, dict[str, Callable]]:
     regex += re.escape(src[idx:]) + "$"
     path += src[idx:]
     return path, re.compile(regex), params
+
+
+def prepare_route_params(
+    methods: TMethodsArg | None,
+    hosts: THostsArg | None,
+) -> tuple[TMethods | None, THosts | None]:
+    if isinstance(methods, str):
+        methods = [methods]
+
+    if methods is not None:
+        methods = {m.upper() for m in methods}
+
+    if isinstance(hosts, str):
+        hosts = {hosts}
+
+    elif hosts is not None:
+        hosts = set(hosts)
+
+    return methods, hosts

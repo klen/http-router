@@ -6,7 +6,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
-from .utils import always_true, identity, parse_path
+from .utils import always_true, identity, parse_path, prepare_route_params
 
 if TYPE_CHECKING:
     from .types import THostsArg, TMethodsArg, TPath, TVObj
@@ -103,8 +103,13 @@ class Router:
         return partial(self.route, methods=method)
 
     def __route__(
-        self, root: Router, prefix: str, *paths: str, methods: TMethodsArg | None = None,
-        hosts: THostsArg | None = None, **__,
+        self,
+        root: Router,
+        prefix: str,
+        *paths: str,
+        methods: TMethodsArg | None = None,
+        hosts: THostsArg | None = None,
+        **__,
     ) -> Router:
         """Bind self as a nested (mounted) router on another ``Router``.
 
@@ -125,19 +130,12 @@ class Router:
 
             # Now router("/api/users", "GET") → list_users
         """
-        if isinstance(methods, str):
-            methods = [methods]
-        if methods is not None:
-            methods = {m.upper() for m in methods}
-
-        if isinstance(hosts, str):
-            hosts = {hosts}
-        elif hosts is not None:
-            hosts = set(hosts)
+        methods, hosts = prepare_route_params(methods, hosts)
 
         for path in (prefix, *paths):
             route = Mount(path, methods, router=self, hosts=hosts)
             root.dynamic.insert(0, route)
+
         return self
 
     @lru_cache(maxsize=1024)  # noqa: B019
@@ -196,16 +194,7 @@ class Router:
         if opts:
             target = partial(target, **opts)
 
-        if isinstance(methods, str):
-            methods = [methods]
-
-        if methods is not None:
-            methods = {m.upper() for m in (methods or [])}
-
-        if isinstance(hosts, str):
-            hosts = {hosts}
-        elif hosts is not None:
-            hosts = set(hosts)
+        methods, hosts = prepare_route_params(methods, hosts)
 
         routes = []
 
