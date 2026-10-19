@@ -29,6 +29,7 @@ match.target(**match.params)  # {"id": "42"}
 - Static (`/users`), dynamic (`/users/{id}`) and regex routes.
 - Typed path parameters: `str`, `int`, `float`, `path`, `uuid`.
 - Any HTTP method, with shortcuts like `router.get` and `router.post`.
+- Optional restriction of routes to one or more hosts.
 - Compose applications from nested routers.
 - Optional Cython acceleration, with a pure-Python fallback.
 - Python 3.10+ (tested on 3.10–3.15 and PyPy).
@@ -143,6 +144,27 @@ def update_user(id): ...
 ```
 
 A route registered without `methods` accepts every method.
+
+## Hosts
+
+Restrict a route to one or more hosts with `hosts=`, and pass the request's host
+when resolving. Hosts are compared verbatim, so strip the port and lowercase the
+host before passing it.
+
+```python
+@router.get("/search")  # no hosts: matches on every host
+def search(): ...
+
+@router.get("/reports", hosts="admin.example.com")
+def reports(): ...
+
+router("/reports", method="GET", host="admin.example.com")  # → reports
+router("/reports", method="GET", host="www.example.com")    # NotFoundError
+router("/search", method="GET", host="www.example.com")     # → search
+```
+
+A route registered without `hosts` matches every host, and one with `hosts` only
+matches the hosts it lists.
 
 ## Nested routers
 
@@ -272,14 +294,15 @@ ASGI server).
 ### Router methods
 
 ```python
-router(path, method="GET")                     # resolve, or raise RouterError
-router.match(path, method)                     # resolve, never raises (cached)
-router.route(*paths, methods=None, **opts)     # decorator / registrar
-router.bind(target, *paths, methods=None, **opts)  # bind without a decorator
+router(path, method="GET", host=None)          # resolve, or raise RouterError
+router.match(path, method, host=None)          # resolve, never raises (cached)
+router.route(*paths, methods=None, hosts=None, **opts)     # decorator / registrar
+router.bind(target, *paths, methods=None, hosts=None, **opts)  # bind without a decorator
 router.routes()                                # all routes, sorted by path
 ```
 
-Extra `opts` are passed to the target as keyword arguments:
+Extra `opts` are passed to the target as keyword arguments, except for the
+reserved `methods` and `hosts`:
 
 ```python
 @router.route("/params", var="value")
