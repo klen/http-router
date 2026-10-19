@@ -4,11 +4,18 @@ from __future__ import annotations
 import importlib
 import shutil
 import sys
+from enum import StrEnum
+from http import HTTPMethod
 from pathlib import Path
 
 import pytest
 
 import http_router
+
+
+class Constant(StrEnum):
+    ADMIN_PATH = "/admin"
+    ADMIN_HOST = "admin.example.com"
 
 
 @pytest.fixture
@@ -72,6 +79,7 @@ def test_implementations_parity(pure_http_router):
                 ("/admin", "GET"),
                 ("/api/users", "GET", "a.example.com"),
                 ("/api/users", "GET", "b.example.com"),
+                (Constant.ADMIN_PATH, HTTPMethod.GET, Constant.ADMIN_HOST),
             )
         ]
 

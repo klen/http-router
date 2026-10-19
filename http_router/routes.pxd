@@ -17,7 +17,7 @@ cdef class Route:
     cdef readonly object hosts
     cdef readonly object target
 
-    cpdef RouteMatch match(self, str path, str method, str host=*)
+    cpdef RouteMatch match(self, object path, object method, object host=*)
 
 
 cdef class DynamicRoute(Route):

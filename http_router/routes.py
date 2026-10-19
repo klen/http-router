@@ -8,7 +8,7 @@ from .router import Router
 from .utils import identity, parse_path
 
 if TYPE_CHECKING:
-    from .types import THosts, TMethods, TPath
+    from .types import THosts, TMethods, TPath, TStr
 
 
 class RouteMatch:
@@ -73,7 +73,7 @@ class Route:
         assert isinstance(route, Route), "Only routes are supported"
         return self.path < route.path
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check if this route matches the given path, method and host.
 
         :param path: Request URL path
@@ -127,7 +127,7 @@ class DynamicRoute(Route):
         self.unquote = unquote
         super(DynamicRoute, self).__init__(path, methods, target, hosts=hosts)  # type: ignore[arg-type]
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check if this route matches using its regex pattern.
 
         Extracts captured URL segments into ``params`` on success.
@@ -171,7 +171,7 @@ class PrefixedRoute(Route):
 
         super(PrefixedRoute, self).__init__(path.rstrip("/"), methods, target, hosts=hosts)
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check if the request path starts with this prefix."""
         methods = self.methods
         return RouteMatch(
@@ -201,7 +201,7 @@ class Mount(PrefixedRoute):
         router = router or Router()
         super(Mount, self).__init__(path, methods, router.match, hosts=hosts)
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check prefix and delegate remaining path to the mounted router."""
         match: RouteMatch = super(Mount, self).match(path, method, host)
         if match.path and match.method:
