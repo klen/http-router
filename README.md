@@ -32,7 +32,7 @@ match.target(**match.params)  # {"id": "42"}
 - Optional restriction of routes to one or more hosts.
 - Compose applications from nested routers.
 - Optional Cython acceleration, with a pure-Python fallback.
-- Python 3.10+ (tested on 3.10–3.15 and PyPy).
+- Python 3.11+ (tested on 3.11–3.15 and PyPy).
 
 ## Install
 

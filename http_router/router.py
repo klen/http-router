@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from functools import lru_cache, partial
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Callable, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self
 
 from .exceptions import InvalidMethodError, NotFoundError, RouterError
 from .utils import always_true, identity, parse_path, prepare_route_params
@@ -110,7 +110,7 @@ class Router:
         methods: TMethodsArg | None = None,
         hosts: THostsArg | None = None,
         **__,
-    ) -> Router:
+    ) -> Self:
         """Bind self as a nested (mounted) router on another ``Router``.
 
         :param root: Parent router to attach to
