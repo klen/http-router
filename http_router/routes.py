@@ -83,10 +83,9 @@ class Route:
 
         Returns a ``RouteMatch`` with the appropriate flags set.
         """
-        methods = self.methods
         return RouteMatch(
             path == self.path and (not self.hosts or host in self.hosts),
-            not methods or (method in methods),
+            not self.methods or (method in self.methods),
             self.target,
         )
 
@@ -125,7 +124,10 @@ class DynamicRoute(Route):
         self.pattern = pattern
         self.params = params or {}
         self.unquote = unquote
-        super(DynamicRoute, self).__init__(path, methods, target, hosts=hosts)  # type: ignore[arg-type]
+        super(DynamicRoute, self).__init__(
+            path,  # type: ignore[arg-type]
+            methods=methods, hosts=hosts, target=target,
+        )
 
     def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
         """Check if this route matches using its regex pattern.
@@ -139,7 +141,7 @@ class DynamicRoute(Route):
         decode = unquote if self.unquote else identity
         return RouteMatch(
             True,
-            not self.methods or method in self.methods,
+            not self.methods or (method in self.methods),
             self.target,
             MappingProxyType(
                 {
@@ -169,14 +171,15 @@ class PrefixedRoute(Route):
         path, pattern, _ = parse_path(path)
         assert not pattern, "Prefix doesn't support patterns."
 
-        super(PrefixedRoute, self).__init__(path.rstrip("/"), methods, target, hosts=hosts)
+        super(PrefixedRoute, self).__init__(
+            path.rstrip("/"), methods=methods, hosts=hosts, target=target,
+        )
 
     def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
         """Check if the request path starts with this prefix."""
-        methods = self.methods
         return RouteMatch(
             path.startswith(self.path) and (not self.hosts or host in self.hosts),
-            not methods or (method in methods),
+            not self.methods or (method in self.methods),
             self.target,
         )
 
@@ -199,7 +202,7 @@ class Mount(PrefixedRoute):
         :param router: The nested Router instance to delegate to. Defaults to a new empty Router.
         """
         router = router or Router()
-        super(Mount, self).__init__(path, methods, router.match, hosts=hosts)
+        super(Mount, self).__init__(path, methods=methods, hosts=hosts, target=router.match)
 
     def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
         """Check prefix and delegate remaining path to the mounted router."""
