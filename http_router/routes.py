@@ -8,7 +8,7 @@ from .router import Router
 from .utils import identity, parse_path
 
 if TYPE_CHECKING:
-    from .types import THosts, TMethods, TPath
+    from .types import THosts, TMethods, TPath, TStr
 
 
 class RouteMatch:
@@ -73,7 +73,7 @@ class Route:
         assert isinstance(route, Route), "Only routes are supported"
         return self.path < route.path
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check if this route matches the given path, method and host.
 
         :param path: Request URL path
@@ -129,7 +129,7 @@ class DynamicRoute(Route):
             methods=methods, hosts=hosts, target=target,
         )
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check if this route matches using its regex pattern.
 
         Extracts captured URL segments into ``params`` on success.
@@ -158,7 +158,7 @@ class PrefixedRoute(Route):
     Used internally for nested routers (Mount).
     """
 
-    def __init__(self, path: str, methods: TMethods | None = None, target: Any = None,
+    def __init__(self, path: TStr, methods: TMethods | None = None, target: Any = None,
         *, hosts: THosts | None = None,
     ):
         """Create a prefix-based route.
@@ -175,7 +175,7 @@ class PrefixedRoute(Route):
             path.rstrip("/"), methods=methods, hosts=hosts, target=target,
         )
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check if the request path starts with this prefix."""
         return RouteMatch(
             path.startswith(self.path) and (not self.hosts or host in self.hosts),
@@ -191,7 +191,7 @@ class Mount(PrefixedRoute):
     for sub-path resolution.
     """
 
-    def __init__(self, path: str, methods: TMethods | None = None, router: Router | None = None,
+    def __init__(self, path: TStr, methods: TMethods | None = None, router: Router | None = None,
         *, hosts: THosts | None = None,
     ):
         """Create a mount point for a nested router.
@@ -204,7 +204,7 @@ class Mount(PrefixedRoute):
         router = router or Router()
         super(Mount, self).__init__(path, methods=methods, hosts=hosts, target=router.match)
 
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Check prefix and delegate remaining path to the mounted router."""
         match: RouteMatch = super(Mount, self).match(path, method, host)
         if match.path and match.method:

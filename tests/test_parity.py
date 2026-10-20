@@ -4,11 +4,19 @@ from __future__ import annotations
 import importlib
 import shutil
 import sys
+from enum import StrEnum
+from http import HTTPMethod
 from pathlib import Path
 
 import pytest
 
 import http_router
+
+
+class Constant(StrEnum):
+    ADMIN_PATH = "/admin"
+    ADMIN_HOST = "admin.example.com"
+    API_PREFIX = "/v2"
 
 
 @pytest.fixture
@@ -45,6 +53,10 @@ def test_implementations_parity(pure_http_router):
         sub.route("/users", hosts="a.example.com")("users")
         router.route("/api")(sub)
 
+        sub = impl.Router()
+        sub.route("/x")("v2x")
+        router.route(Constant.API_PREFIX)(sub)
+
         def call(path, method, host=None):
             try:
                 match = router(path, method, host)
@@ -72,6 +84,8 @@ def test_implementations_parity(pure_http_router):
                 ("/admin", "GET"),
                 ("/api/users", "GET", "a.example.com"),
                 ("/api/users", "GET", "b.example.com"),
+                ("/v2/x", "GET"),
+                (Constant.ADMIN_PATH, HTTPMethod.GET, Constant.ADMIN_HOST),
             )
         ]
 

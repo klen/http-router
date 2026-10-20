@@ -9,7 +9,7 @@ from .exceptions import InvalidMethodError, NotFoundError, RouterError
 from .utils import always_true, identity, parse_path, prepare_route_params
 
 if TYPE_CHECKING:
-    from .types import THostsArg, TMethodsArg, TPath, TVObj
+    from .types import THostsArg, TMethodsArg, TPath, TStr, TVObj
 
 
 class Router:
@@ -67,7 +67,7 @@ class Router:
         self.plain: defaultdict[str, list[Route]] = defaultdict(list)
         self.dynamic: list[Route] = []
 
-    def __call__(self, path: str, method: str = "GET", host: str | None = None) -> RouteMatch:
+    def __call__(self, path: TStr, method: TStr = "GET", host: TStr | None = None) -> RouteMatch:
         """Resolve a path+method(+host) to the matched route, or raise an error.
 
         :param path: URL path string (e.g. ``"/users/42"``)
@@ -105,8 +105,8 @@ class Router:
     def __route__(
         self,
         root: Router,
-        prefix: str,
-        *paths: str,
+        prefix: TStr,
+        *paths: TStr,
         methods: TMethodsArg | None = None,
         hosts: THostsArg | None = None,
         **__,
@@ -139,7 +139,7 @@ class Router:
         return self
 
     @lru_cache(maxsize=1024)  # noqa: B019
-    def match(self, path: str, method: str, host: str | None = None) -> RouteMatch:
+    def match(self, path: TStr, method: TStr, host: TStr | None = None) -> RouteMatch:
         """Search for a matching route by path, HTTP method and host.
 
         Results are cached (1024 entries).
