@@ -156,7 +156,7 @@ class PrefixedRoute(Route):
     Used internally for nested routers (Mount).
     """
 
-    def __init__(self, path: str, methods: TMethods | None = None, target: Any = None,
+    def __init__(self, path: TStr, methods: TMethods | None = None, target: Any = None,
         *, hosts: THosts | None = None,
     ):
         """Create a prefix-based route.
@@ -188,7 +188,7 @@ class Mount(PrefixedRoute):
     for sub-path resolution.
     """
 
-    def __init__(self, path: str, methods: TMethods | None = None, router: Router | None = None,
+    def __init__(self, path: TStr, methods: TMethods | None = None, router: Router | None = None,
         *, hosts: THosts | None = None,
     ):
         """Create a mount point for a nested router.

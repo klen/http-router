@@ -105,8 +105,8 @@ class Router:
     def __route__(
         self,
         root: Router,
-        prefix: str,
-        *paths: str,
+        prefix: TStr,
+        *paths: TStr,
         methods: TMethodsArg | None = None,
         hosts: THostsArg | None = None,
         **__,
